@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISH APP-V3 | Professional Data Management</title>
+    <title>FISH APP-V3 | Management System</title>
     <style>
         :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; }
         
@@ -21,7 +21,7 @@
         }
 
         /* --- HEADER & HERO --- */
-        header { text-align: center; padding: 50px 20px; transition: 0.5s; }
+        header { text-align: center; padding: 50px 20px; }
         h1 { font-size: clamp(30px, 8vw, 60px); letter-spacing: 8px; color: #fff; margin: 0; text-shadow: 0 0 20px var(--neon); }
         .subtitle { color: var(--neon); font-size: 14px; margin-top: 10px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.8; }
 
@@ -33,44 +33,53 @@
             background: rgba(0,0,0,0.6); color: var(--neon); padding: 14px 24px;
             font-weight: bold; border: 1.5px solid var(--neon); border-radius: 4px; cursor: pointer;
             text-transform: uppercase; font-size: 12px; display: flex; align-items: center; gap: 10px;
-            transition: all 0.3s ease; box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+            transition: all 0.3s ease;
         }
 
         .dropdown-content {
             display: none; position: absolute; background-color: #111; min-width: 240px;
             z-index: 100; border: 1px solid var(--neon); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            border-radius: 0 0 8px 8px; margin-top: 2px;
+            border-radius: 0 0 8px 8px;
         }
         
         .dropdown-content a { 
             color: #ccc; padding: 12px 18px; text-decoration: none; display: block; 
-            border-bottom: 1px solid #222; font-size: 13px; transition: 0.2s;
+            border-bottom: 1px solid #222; font-size: 13px;
         }
         
-        .dropdown-content a:hover { background: var(--neon); color: #000; font-weight: bold; padding-left: 25px; }
+        .dropdown-content a:hover { background: var(--neon); color: #000; font-weight: bold; }
         .dropdown:hover .dropdown-content { display: block; }
-        .dropdown:hover .dropbtn { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); }
+        .dropdown:hover .dropbtn { background: var(--neon); color: #000; }
 
         /* --- DATA TABLE SECTION --- */
         #databaseSection { display: none; background: #000; min-height: 100vh; padding-top: 20px; }
-        .controls { display: flex; gap: 15px; align-items: center; max-width: 98%; margin: 0 auto 15px auto; flex-wrap: wrap; }
+        .controls { display: flex; gap: 15px; align-items: center; max-width: 98%; margin: 0 auto 15px auto; }
         
-        .btn-home { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-home:hover { background: #cc0000; transform: scale(1.05); }
+        .btn-home { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
         #searchInput { flex: 1; padding: 12px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; outline: none; }
-        #searchInput:focus { border-color: var(--neon); }
 
+        /* PERBAIKAN JARAK KOLOM */
         .table-wrapper { overflow: auto; height: 85vh; border: 1px solid #222; margin: 0 10px; }
-        table { border-collapse: collapse; width: 100%; min-width: 1000px; }
+        table { 
+            border-collapse: collapse; 
+            width: auto; /* Agar kolom merapat sesuai isi */
+            min-width: 100%; 
+        }
         th { 
-            background: var(--neon); color: #000; padding: 14px 10px; 
+            background: var(--neon); color: #000; padding: 10px 15px; 
             position: sticky; top: 0; white-space: nowrap; text-align: left; font-size: 12px; z-index: 10;
         }
-        td { padding: 10px; border-bottom: 1px solid #222; white-space: nowrap; font-size: 11.5px; color: #bbb; }
+        td { 
+            padding: 8px 15px; /* Jarak kolom lebih rapat */
+            border-bottom: 1px solid #222; 
+            white-space: nowrap; 
+            font-size: 11.5px; 
+            color: #bbb;
+        }
         tr:hover { background: #111; }
         
-        .img-cell { height: 40px; border-radius: 3px; border: 1px solid #444; }
+        .img-cell { height: 45px; border-radius: 3px; border: 1px solid #444; vertical-align: middle; }
         
         #loader { text-align: center; color: var(--neon); padding: 100px; display: none; }
         .error-msg { color: var(--accent); font-weight: bold; text-align: center; padding: 40px; background: rgba(255,0,0,0.1); border: 1px solid var(--accent); margin: 20px; border-radius: 8px; }
@@ -149,9 +158,7 @@
     </section>
 
     <script>
-        /** * PENTING: Ganti URL di bawah ini dengan URL Web App Anda yang baru dari Google Apps Script!
-         * Pastikan saat Deploy: "Execute as: Me" dan "Who has access: Anyone"
-         */
+        // URL SCRIPT ANDA
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOasisnR1DTEmmsvhLDcNTogQw13f5MkX0U-vUpnHNzWLiSdgO7EisEzM2EgDnYhtP/exec"; 
         
         let fullData = [];
@@ -162,7 +169,6 @@
             document.getElementById('tableTitle').innerText = sheetName.toUpperCase();
             document.getElementById('errorMessage').innerHTML = "";
             document.getElementById('tableContainer').innerHTML = "";
-            
             await loadData(sheetName);
         }
 
@@ -175,42 +181,37 @@
         async function loadData(sheet) {
             const loader = document.getElementById('loader');
             loader.style.display = 'block';
-
             try {
                 const response = await fetch(`${SCRIPT_URL}?action=read&sheet=${sheet}`);
                 const result = await response.json();
-                
                 if (result.status === "success") {
                     fullData = result.data;
                     renderTable(fullData);
                 } else {
-                    showError("Gagal mengambil data dari Google Sheets. Pastikan nama tab benar.");
+                    showError("Gagal mengambil data. Pastikan nama tab benar.");
                 }
             } catch (e) {
-                showError("Gagal memuat data. Periksa URL API atau Izin Deployment (setel ke 'Anyone').");
+                showError("Gagal memuat data. Cek URL API atau Izin Deployment.");
             }
             loader.style.display = 'none';
         }
 
         function renderTable(data) {
             if (data.length === 0) {
-                document.getElementById('tableContainer').innerHTML = "<p style='text-align:center'>Tidak ada data ditemukan.</p>";
+                document.getElementById('tableContainer').innerHTML = "<p style='text-align:center'>Data Kosong.</p>";
                 return;
             }
-
             let html = "<table><thead><tr>";
-            // Headers
             data[0].forEach(h => html += `<th>${h}</th>`);
             html += "</tr></thead><tbody>";
 
-            // Rows
             for (let i = 1; i < data.length; i++) {
                 html += "<tr>";
                 data[i].forEach(cell => {
-                    let val = cell === null ? "" : cell;
-                    // Deteksi Gambar
-                    if (typeof val === 'string' && (val.includes("http") && (val.match(/\.(jpg|jpeg|png|gif|webp)/) || val.includes("drive.google")))) {
-                        val = `<img src="${val}" class="img-cell" onerror="this.parentElement.innerHTML='No Image'">`;
+                    let val = (cell === null || cell === undefined) ? "" : cell;
+                    // Logika Deteksi Gambar (Drive atau URL Langsung)
+                    if (typeof val === 'string' && val.includes("http") && (val.match(/\.(jpg|jpeg|png|gif|webp)/i) || val.includes("drive.google"))) {
+                        val = `<img src="${val}" class="img-cell" onerror="this.src='https://via.placeholder.com/40?text=No+Img'">`;
                     }
                     html += `<td>${val}</td>`;
                 });
@@ -224,7 +225,6 @@
             document.getElementById('errorMessage').innerHTML = `<div class="error-msg">${msg}</div>`;
         }
 
-        // Search Logic
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             const filtered = [fullData[0], ...fullData.slice(1).filter(row => 
