@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FISH APP-V3 | Professional Cloud</title>
+    <style>
+        :root { --neon: #00d2ff; --bg: #0b0b0b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #cfcfcf; margin: 0; font-size: 11px; }
+        .navbar { background: #111; padding: 10px; border-bottom: 1px solid var(--neon); text-align: center; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        .grid-container { width: 100vw; height: calc(100vh - 100px); overflow: auto; background: #000; }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1000px; }
+        th { background: var(--neon); color: #000; padding: 10px; position: sticky; top: 0; text-align: left; z-index: 10; }
+        td { padding: 8px; border: 1px solid #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .img-preview { height: 40px; border-radius: 4px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <button class="btn" onclick="loadData()">🔄 REFRESH DATABASE</button>
+        <input type="text" id="searchInput" placeholder="Cari Kode atau Nama Ikan..." 
+               style="padding: 10px; margin-left: 10px; width: 300px; background: #000; color: var(--neon); border: 1px solid #333;">
+    </div>
+
+    <div class="grid-container">
+        <div id="tableContainer"></div>
+    </div>
+
+    <script>
+        // MASUKKAN URL WEB APP GOOGLE ANDA DI SINI
+        const API_URL = "GANTI_DENGAN_URL_DARI_SCREENSHOT_34"; 
+
+        async function loadData() {
+            const container = document.getElementById('tableContainer');
+            container.innerHTML = "<p style='padding:20px; color:var(--neon)'>⚡ Menghubungkan ke Google Cloud (8.000 rows)...</p>";
+            
+            try {
+                const response = await fetch(`${API_URL}?action=getFish`);
+                const rows = await response.json();
+                window.allData = rows; // Simpan data untuk pencarian
+                renderTable(rows);
+            } catch (err) {
+                container.innerHTML = "<p style='color:red; padding:20px;'>Gagal memuat data. Cek API URL atau izin Deployment.</p>";
+            }
+        }
+
+        function renderTable(rows) {
+            if (!rows || rows.length === 0) return;
+            let html = "<table><thead><tr>";
+            rows[0].forEach(head => html += `<th>${head}</th>`);
+            html += "</tr></thead><tbody>";
+
+            for(let i=1; i < Math.min(rows.length, 500); i++) { // Batasi 500 baris pertama agar cepat
+                html += "<tr>";
+                rows[i].forEach((cell, j) => {
+                    let content = cell;
+                    if (j === 3 && String(cell).includes("http")) {
+                        content = `<img src="${cell}" class="img-preview" onerror="this.src='https://via.placeholder.com/40?text=No+Img'">`;
+                    }
+                    html += `<td>${content}</td>`;
+                });
+                html += "</tr>";
+            }
+            html += "</tbody></table>";
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        // Fungsi Pencarian Cepat (Client-side)
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const val = e.target.value.toLowerCase();
+            if (!window.allData) return;
+            const filtered = [window.allData[0], ...window.allData.slice(1).filter(row => 
+                row.some(cell => String(cell).toLowerCase().includes(val))
+            ).slice(0, 100)];
+            renderTable(filtered);
+        });
+
+        loadData();
+    </script>
+</body>
+</html>
