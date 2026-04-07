@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISH APP-V3 | Professional Cloud</title>
+    <title>FISH APP-V3 | Management System</title>
     <style>
         :root { --neon: #00d2ff; --bg: #0b0b0b; }
         
@@ -12,7 +12,7 @@
             background: var(--bg); 
             color: #efefef; 
             margin: 0;
-            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), 
                               url('https://images.unsplash.com/photo-1524704659690-3f7a37d9ee23?q=80&w=2070');
             background-size: cover;
             background-position: center;
@@ -20,59 +20,47 @@
         }
 
         /* --- HEADER --- */
-        header { text-align: center; padding: 40px 20px; }
-        h1 { font-size: 48px; letter-spacing: 5px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
-        .subtitle { color: var(--neon); font-size: 14px; margin-bottom: 30px; }
+        header { text-align: center; padding: 60px 20px; }
+        h1 { font-size: 50px; letter-spacing: 6px; color: #fff; margin: 0; text-shadow: 0 0 15px var(--neon); }
+        .subtitle { color: var(--neon); font-size: 14px; margin-top: 10px; letter-spacing: 1px; }
 
-        /* --- DROPDOWN --- */
-        .nav-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        /* --- NAV / DROPDOWN SYSTEM --- */
+        .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-top: 40px; }
+        
         .dropdown { position: relative; display: inline-block; }
         .dropbtn {
-            background: rgba(0,0,0,0.6); color: var(--neon); padding: 12px 25px;
-            font-weight: bold; border: 1px solid var(--neon); border-radius: 4px; cursor: pointer;
+            background: rgba(0,0,0,0.7); color: var(--neon); padding: 12px 20px;
+            font-weight: bold; border: 1px solid var(--neon); border-radius: 5px; cursor: pointer;
+            text-transform: uppercase; font-size: 12px; display: flex; align-items: center; gap: 8px;
         }
+
         .dropdown-content {
-            display: none; position: absolute; background-color: #111; min-width: 180px;
-            z-index: 100; border: 1px solid var(--neon);
+            display: none; position: absolute; background-color: #111; min-width: 200px;
+            z-index: 100; border: 1px solid var(--neon); box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
-        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; border-bottom: 1px solid #222; }
-        .dropdown-content a:hover { background: var(--neon); color: black; }
-        .dropdown:hover .dropdown-content { display: block; }
-
-        /* --- SECTION DATABASE --- */
-        #databaseSection { display: none; background: rgba(0,0,0,0.95); padding: 20px; min-height: 100vh; }
         
-        /* PERBAIKAN LEBAR KOLOM DI SINI */
-        .table-wrapper { 
-            overflow: auto; 
-            max-height: 85vh; 
-            border: 1px solid #333;
+        .dropdown-content a { 
+            color: #ddd; padding: 12px 16px; text-decoration: none; display: block; 
+            border-bottom: 1px solid #222; font-size: 13px;
         }
-        table { 
-            border-collapse: collapse; 
-            width: auto; /* Agar lebar tabel mengikuti konten, bukan dipaksa 100% */
-            min-width: 100%;
-            font-size: 11px; 
-        }
-        th { 
-            background: var(--neon); 
-            color: #000; 
-            padding: 10px 15px; 
-            position: sticky; 
-            top: 0; 
-            white-space: nowrap; /* Mencegah nama kolom turun ke bawah */
-            text-align: left;
-        }
-        td { 
-            padding: 8px 15px; 
-            border-bottom: 1px solid #222; 
-            white-space: nowrap; /* Data tetap satu baris */
-            color: #ccc;
-        }
-        tr:hover { background: #1a1a1a; }
-        .img-preview { height: 40px; border-radius: 4px; display: block; }
+        
+        .dropdown-content a:hover { background: var(--neon); color: black; font-weight: bold; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown:hover .dropbtn { background: var(--neon); color: black; }
 
+        /* --- TABLE SECTION --- */
+        #databaseSection { display: none; background: rgba(11,11,11,0.98); padding: 20px; min-height: 100vh; }
+        .table-wrapper { overflow: auto; max-height: 80vh; margin-top: 10px; border: 1px solid #333; }
+        
+        table { border-collapse: collapse; width: auto; min-width: 100%; }
+        th { 
+            background: var(--neon); color: #000; padding: 12px 15px; 
+            position: sticky; top: 0; white-space: nowrap; text-align: left; font-size: 12px;
+        }
+        td { padding: 10px 15px; border-bottom: 1px solid #222; white-space: nowrap; font-size: 12px; color: #ccc; }
+        
         .btn-back { background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        input#searchInput { flex: 1; padding: 10px; background: #000; color: var(--neon); border: 1px solid #333; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -80,73 +68,122 @@
     <header id="homeHeader">
         <h1>FISH APP-V3</h1>
         <div class="subtitle">Advanced Management System for Fish & Coral</div>
+        
         <div class="nav-container">
             <div class="dropdown">
                 <button class="dropbtn">📁 DATABASE ▾</button>
                 <div class="dropdown-content">
-                    <a href="#" onclick="showDatabase()">Master Data Ikan</a>
-                    <a href="#">Data Supplier</a>
-                    <a href="#">Customer</a>
+                    <a href="#" onclick="showDatabase('User')">User</a>
+                    <a href="#" onclick="showDatabase('Customer')">Customer</a>
+                    <a href="#" onclick="showDatabase('Data Supplier')">Data Supplier</a>
+                    <a href="#" onclick="showDatabase('Harga Supplier')">Harga Supplier</a>
+                    <a href="#" onclick="showDatabase('Master Data Ikan')">Master Data Ikan</a>
+                    <a href="#" onclick="showDatabase('Data Ikan Bali Aquarich')">Data Ikan Bali Aquarich</a>
                 </div>
             </div>
+
             <div class="dropdown">
                 <button class="dropbtn">🚢 PEMBELIAN ▾</button>
                 <div class="dropdown-content">
                     <a href="#">Nota</a>
+                    <a href="#">Pembelian Ikan</a>
                     <a href="#">Stok List Wild</a>
                     <a href="#">Stok List Culture</a>
+                    <a href="#">Stok List</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
+                <div class="dropdown-content">
+                    <a href="#">Tgl Order</a>
+                    <a href="#">Order</a>
+                    <a href="#">List Order</a>
+                    <a href="#">Tersedia</a>
+                    <a href="#">Terikat</a>
+                    <a href="#">Diskon</a>
+                    <a href="#">Invoice</a>
+                    <a href="#">Box</a>
+                    <a href="#">Pengiriman Ikan</a>
+                    <a href="#">Dead On Arrival</a>
+                    <a href="#">List Packing</a>
+                    <a href="#">Cek List Packing</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">📊 STOK ▾</button>
+                <div class="dropdown-content">
+                    <a href="#">Opname</a>
+                    <a href="#">Tgl Mati</a>
+                    <a href="#">Kematian</a>
+                    <a href="#">Kerusakan</a>
+                    <a href="#">Mutasi Size Out</a>
+                    <a href="#">Mutasi Size In</a>
+                    <a href="#">Sample Karantina</a>
+                    <a href="#">Mutasi Farm Coral</a>
+                    <a href="#">Lost</a>
+                    <a href="#">Found</a>
+                    <a href="#">Rekap Stok</a>
+                    <a href="#">Laporan Stok</a>
                 </div>
             </div>
         </div>
     </header>
 
     <section id="databaseSection">
-        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
             <button onclick="goHome()" class="btn-back">⬅ KEMBALI</button>
-            <input type="text" id="searchInput" placeholder="Cari data..." style="flex:1; padding:10px; background:#000; color:var(--neon); border:1px solid #333;">
+            <h2 id="tableTitle" style="color: var(--neon); margin: 0; font-size: 18px; min-width: 200px;"></h2>
+            <input type="text" id="searchInput" placeholder="Cari data di tabel ini...">
         </div>
-        <div id="loader" style="text-align: center; color: var(--neon); display: none;">⚡ LOADING DATA...</div>
+        <div id="loader" style="text-align: center; color: var(--neon); padding: 50px; display: none;">⚡ MENGAMBIL DATA DARI CLOUD...</div>
         <div class="table-wrapper" id="tableContainer"></div>
     </section>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyiYKUhecGfXLaOLRn5lW3qIgBdh1F0PHTOEvcel72wxXiXXzHdaQV_201Jixmb4be3/exec"; // GANTI DENGAN URL /exec ANDA
+        const API_URL = "https://script.google.com/macros/s/AKfycbyiYKUhecGfXLaOLRn5lW3qIgBdh1F0PHTOEvcel72wxXiXXzHdaQV_201Jixmb4be3/exec"; 
 
-        function showDatabase() {
+        function showDatabase(title) {
             document.getElementById('homeHeader').style.display = 'none';
             document.getElementById('databaseSection').style.display = 'block';
+            document.getElementById('tableTitle').innerText = title.toUpperCase();
             document.body.style.backgroundImage = "none";
-            loadData();
+            loadData(title);
         }
 
         function goHome() { location.reload(); }
 
-        async function loadData() {
+        async function loadData(sheetName) {
             const loader = document.getElementById('loader');
+            const container = document.getElementById('tableContainer');
+            container.innerHTML = "";
             loader.style.display = 'block';
+            
             try {
-                const response = await fetch(`${API_URL}?action=getFish`);
+                // Menambahkan parameter sheet agar Apps Script tahu tabel mana yang dibuka
+                const response = await fetch(`${API_URL}?action=getData&sheet=${sheetName}`);
                 const rows = await response.json();
                 window.allData = rows;
                 renderTable(rows);
             } catch (err) {
-                console.error(err);
+                container.innerHTML = `<p style="color:red">Gagal memuat data. Periksa URL API atau Izin Deployment.</p>`;
             }
             loader.style.display = 'none';
         }
 
         function renderTable(rows) {
-            if (!rows) return;
+            if (!rows || rows.length === 0) return;
             let html = "<table><thead><tr>";
             rows[0].forEach(h => html += `<th>${h}</th>`);
             html += "</tr></thead><tbody>";
 
-            for(let i=1; i < Math.min(rows.length, 500); i++) {
+            for(let i=1; i < rows.length; i++) {
                 html += "<tr>";
-                rows[i].forEach((cell, j) => {
+                rows[i].forEach(cell => {
                     let content = cell;
                     if (String(cell).includes("http")) {
-                        content = `<img src="${cell}" class="img-preview">`;
+                        content = `<img src="${cell}" style="height:40px; border-radius:4px;">`;
                     }
                     html += `<td>${content}</td>`;
                 });
@@ -156,6 +193,7 @@
             document.getElementById('tableContainer').innerHTML = html;
         }
 
+        // Fungsi Pencarian
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const val = e.target.value.toLowerCase();
             const filtered = [window.allData[0], ...window.allData.slice(1).filter(r => 
