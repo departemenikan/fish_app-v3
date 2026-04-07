@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISH APP-V3 | Professional Cloud</title>
+    <title>FISH APP-V3 | Professional Management</title>
     <style>
         :root { 
             --neon: #00d2ff; 
             --bg: #0b0b0b; 
-            --card: #161616;
-            --border: #333;
+            --nav-bg: #111;
+            --border: #222;
         }
         
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Segoe UI', sans-serif; 
             background: var(--bg); 
             color: #efefef; 
             margin: 0; 
@@ -21,217 +21,179 @@
             overflow: hidden;
         }
 
-        /* --- NAVBAR & CONTROLS --- */
-        .navbar { 
-            background: #111; 
-            padding: 15px; 
-            border-bottom: 1px solid var(--neon); 
-            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+        /* --- HEADER AREA (Sesuai Screenshot 11) --- */
+        header {
+            text-align: center;
+            padding: 30px 20px 10px 20px;
+            background: linear-gradient(to bottom, #111, var(--bg));
         }
 
-        .nav-content {
+        header h1 {
+            font-size: 42px;
+            margin: 0;
+            color: #fff;
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        header p {
+            color: #888;
+            margin: 5px 0 20px 0;
+            font-size: 14px;
+        }
+
+        /* --- MENU NAVIGASI --- */
+        .main-nav {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            border-bottom: 2px solid var(--neon);
+            padding-bottom: 10px;
+        }
+
+        .nav-item {
+            color: var(--neon);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* --- CONTROL BAR (Dropdown & Search) --- */
+        .control-bar {
+            background: #111;
+            padding: 10px 20px;
             display: flex;
             flex-wrap: wrap;
+            justify-content: center;
             align-items: center;
             gap: 15px;
-            max-width: 1400px;
-            margin: 0 auto;
+            border-bottom: 1px solid #333;
         }
 
-        h1 { 
-            color: var(--neon); 
-            margin: 0; 
-            font-size: 18px; 
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            display: flex;
-            gap: 10px;
-        }
-
-        input, select {
+        select, input {
             background: #000;
-            border: 1px solid var(--border);
+            border: 1px solid #333;
             color: var(--neon);
             padding: 8px 12px;
-            border-radius: 5px;
+            border-radius: 4px;
             outline: none;
         }
 
-        input:focus, select:focus {
-            border-color: var(--neon);
-            box-shadow: 0 0 5px var(--neon);
-        }
-
-        .btn { 
-            background: var(--neon); 
-            color: #000; 
-            border: none; 
-            padding: 8px 15px; 
-            font-weight: bold; 
-            cursor: pointer; 
+        .btn-refresh {
+            background: var(--neon);
+            color: #000;
+            border: none;
+            padding: 8px 15px;
+            font-weight: bold;
             border-radius: 4px;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-
-        .btn:hover {
-            background: #fff;
-            box-shadow: 0 0 10px var(--neon);
+            cursor: pointer;
         }
 
         /* --- TABLE AREA --- */
         .grid-container { 
             width: 100vw; 
-            height: calc(100vh - 80px); 
+            height: calc(100vh - 240px); /* Menyesuaikan tinggi header baru */
             overflow: auto; 
-            background: #000;
         }
 
-        table { 
-            border-collapse: collapse; 
-            width: 100%; 
-            table-layout: auto; 
-            min-width: 1200px;
-        }
-
+        table { border-collapse: collapse; width: 100%; min-width: 1200px; }
         th { 
-            background: #1a1a1a; 
-            color: var(--neon); 
+            background: var(--neon); 
+            color: #000; 
             padding: 12px; 
             position: sticky; 
             top: 0; 
-            text-align: left; 
             z-index: 10;
-            border-bottom: 2px solid var(--neon);
-            text-transform: uppercase;
             font-size: 11px;
         }
+        td { padding: 10px; border-bottom: 1px solid #222; white-space: nowrap; }
+        tr:hover { background: #151515; }
+        .img-preview { height: 40px; border-radius: 3px; }
 
-        td { 
-            padding: 10px; 
-            border-bottom: 1px solid #222; 
-            white-space: nowrap; 
-        }
-
-        tr:hover { background: #111; }
-
-        .img-preview { 
-            height: 45px; 
-            width: 60px;
-            object-fit: cover;
-            border-radius: 4px; 
-            border: 1px solid var(--border);
-            background: #222;
-        }
-
-        /* Status Loading */
-        #loader {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            display: none;
-        }
+        #loader { text-align: center; padding: 50px; color: var(--neon); display: none; }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <div class="nav-content">
-            <h1>FISH DATABASE</h1>
-            
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Cari Kode atau Nama Ikan...">
-                
-                <select id="categoryFilter">
-                    <option value="">-- SEMUA GRUP --</option>
-                </select>
-            </div>
-
-            <button class="btn" onclick="loadData()">🔄 REFRESH DATA</button>
+    <header>
+        <h1>FISH APP-V3</h1>
+        <p>Advanced Management System for Fish & Coral</p>
+        
+        <div class="main-nav">
+            <span class="nav-item">📁 DATABASE</span>
+            <span class="nav-item">🚢 PEMBELIAN</span>
+            <span class="nav-item">📮 PENGIRIMAN</span>
+            <span class="nav-item">📊 STOK</span>
         </div>
+    </header>
+
+    <div class="control-bar">
+        <button class="btn-refresh" onclick="loadData()">🔄 REFRESH DATABASE</button>
+        
+        <select id="categoryFilter">
+            <option value="">-- SEMUA GRUP --</option>
+        </select>
+
+        <input type="text" id="searchInput" placeholder="Cari Kode atau Nama Ikan..." style="width: 250px;">
     </div>
 
-    <div id="loader">
-        <h2 style="color: var(--neon)">⚡ MEMUAT 8.000 DATA...</h2>
-        <p>Mohon tunggu sebentar</p>
-    </div>
+    <div id="loader"><h2>⚡ SEDANG SINKRONISASI DATA...</h2></div>
 
     <div class="grid-container">
         <div id="tableContainer"></div>
     </div>
 
     <script>
-        // --- KONFIGURASI ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbyiYKUhecGfXLaOLRn5lW3qIgBdh1F0PHTOEvcel72wxXiXXzHdaQV_201Jixmb4be3/exec"; 
+        const API_URL = "GANTI_DENGAN_URL_WEB_APP_ANDA"; 
         let allData = [];
 
-        // 1. Fungsi Ambil Data
         async function loadData() {
             const loader = document.getElementById('loader');
             const container = document.getElementById('tableContainer');
-            
             loader.style.display = 'block';
             container.innerHTML = "";
             
             try {
                 const response = await fetch(`${API_URL}?action=getFish`);
                 const rows = await response.json();
-                
                 allData = rows;
                 populateCategories(rows);
                 renderTable(rows);
-                
                 loader.style.display = 'none';
             } catch (err) {
-                loader.innerHTML = `<h2 style="color:red">GAGAL KONEKSI</h2><p>${err}</p>`;
+                loader.innerHTML = `<h3 style="color:red">ERROR: ${err}</h3>`;
             }
         }
 
-        // 2. Buat Dropdown Otomatis berdasarkan Kolom Grup (Biasanya kolom ke-2 atau ke-3)
         function populateCategories(rows) {
             const select = document.getElementById('categoryFilter');
             const categories = new Set();
-            
-            // Asumsi Kolom Grup ada di Index 1 (Kolom B) - Sesuaikan jika beda
             for(let i=1; i<rows.length; i++) {
-                if(rows[i][1]) categories.add(rows[i][1]);
+                if(rows[i][1]) categories.add(rows[i][1]); // Asumsi kolom B adalah Grup
             }
-
             select.innerHTML = '<option value="">-- SEMUA GRUP --</option>';
             Array.from(categories).sort().forEach(cat => {
                 select.innerHTML += `<option value="${cat}">${cat}</option>`;
             });
         }
 
-        // 3. Gambar Tabel
         function renderTable(rows) {
             if (!rows || rows.length === 0) return;
-            
             let html = "<table><thead><tr>";
-            // Header
             rows[0].forEach(head => html += `<th>${head}</th>`);
             html += "</tr></thead><tbody>";
 
-            // Isi Data (Hanya render 300 pertama untuk performa, sisanya muncul saat cari)
-            const limit = rows.length > 500 ? 500 : rows.length;
-            
-            for(let i=1; i < rows.length; i++) {
-                // Tampilkan semua jika data hasil filter sedikit, limit jika data ribuan
-                if(rows.length > 500 && i > 500) break; 
-
+            for(let i=1; i < Math.min(rows.length, 1000); i++) {
                 html += "<tr>";
                 rows[i].forEach((cell, j) => {
                     let content = cell;
-                    // Deteksi Link Gambar (Biasanya di kolom 3 atau 4)
-                    if (String(cell).includes("http") && (String(cell).includes(".jpg") || String(cell).includes("drive.google"))) {
-                        content = `<img src="${cell}" class="img-preview" loading="lazy" onerror="this.src='https://via.placeholder.com/60x45?text=No+Img'">`;
+                    if (String(cell).includes("http")) {
+                        content = `<img src="${cell}" class="img-preview" loading="lazy">`;
                     }
                     html += `<td>${content}</td>`;
                 });
@@ -241,25 +203,20 @@
             document.getElementById('tableContainer').innerHTML = html;
         }
 
-        // 4. Fitur Pencarian & Filter Gabungan
         function filterData() {
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const catVal = document.getElementById('categoryFilter').value;
-            
             const filtered = [allData[0], ...allData.slice(1).filter(row => {
                 const matchSearch = row.some(cell => String(cell).toLowerCase().includes(searchVal));
-                const matchCat = catVal === "" || row[1] === catVal; // Sesuaikan index [1] dengan kolom grup anda
+                const matchCat = catVal === "" || row[1] === catVal;
                 return matchSearch && matchCat;
             })];
-            
             renderTable(filtered);
         }
 
-        // Event Listeners
         document.getElementById('searchInput').addEventListener('input', filterData);
         document.getElementById('categoryFilter').addEventListener('change', filterData);
 
-        // Jalankan saat start
         loadData();
     </script>
 </body>
