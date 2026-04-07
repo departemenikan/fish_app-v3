@@ -17,6 +17,234 @@
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            transition: background 0.5s ease;
+        }
+
+        /* --- HEADER & HOME --- */
+        header { text-align: center; padding: 60px 20px; transition: 0.3s; }
+        h1 { font-size: 50px; letter-spacing: 6px; color: #fff; margin: 0; text-shadow: 0 0 15px var(--neon); }
+        .subtitle { color: var(--neon); font-size: 14px; margin-top: 10px; letter-spacing: 1px; }
+
+        /* --- NAV / DROPDOWN SYSTEM --- */
+        .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-top: 40px; }
+        
+        .dropdown { position: relative; display: inline-block; }
+        .dropbtn {
+            background: rgba(0,0,0,0.7); color: var(--neon); padding: 12px 20px;
+            font-weight: bold; border: 1px solid var(--neon); border-radius: 5px; cursor: pointer;
+            text-transform: uppercase; font-size: 12px; display: flex; align-items: center; gap: 8px;
+            transition: 0.3s;
+        }
+
+        .dropdown-content {
+            display: none; position: absolute; background-color: #111; min-width: 220px;
+            z-index: 100; border: 1px solid var(--neon); box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+        }
+        
+        .dropdown-content a { 
+            color: #ddd; padding: 12px 16px; text-decoration: none; display: block; 
+            border-bottom: 1px solid #222; font-size: 13px;
+        }
+        
+        .dropdown-content a:hover { background: var(--neon); color: black; font-weight: bold; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown:hover .dropbtn { background: var(--neon); color: black; }
+
+        /* --- DATABASE SECTION --- */
+        #databaseSection { display: none; background: rgba(11,11,11,0.98); padding: 20px; min-height: 100vh; }
+        .table-wrapper { overflow: auto; max-height: 82vh; margin-top: 15px; border: 1px solid #333; background: #000; }
+        
+        table { border-collapse: collapse; width: auto; min-width: 100%; }
+        th { 
+            background: var(--neon); color: #000; padding: 12px 15px; 
+            position: sticky; top: 0; white-space: nowrap; text-align: left; font-size: 12px; z-index: 5;
+        }
+        td { padding: 10px 15px; border-bottom: 1px solid #222; white-space: nowrap; font-size: 12px; color: #ccc; }
+        tr:hover { background: #151515; }
+        
+        .btn-back { background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        input#searchInput { flex: 1; padding: 10px; background: #000; color: var(--neon); border: 1px solid #333; border-radius: 4px; outline: none; }
+        input#searchInput:focus { border-color: var(--neon); box-shadow: 0 0 5px var(--neon); }
+
+        .img-cell { height: 45px; border-radius: 4px; border: 1px solid #333; }
+        #loader { text-align: center; color: var(--neon); padding: 50px; display: none; }
+    </style>
+</head>
+<body>
+
+    <header id="homeHeader">
+        <h1>FISH APP-V3</h1>
+        <div class="subtitle">Advanced Management System for Fish & Coral</div>
+        
+        <div class="nav-container">
+            <div class="dropdown">
+                <button class="dropbtn">📁 DATABASE ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('User')">User</a>
+                    <a href="#" onclick="openSheet('Customer')">Customer</a>
+                    <a href="#" onclick="openSheet('Data Supplier')">Data Supplier</a>
+                    <a href="#" onclick="openSheet('Harga Supplier')">Harga Supplier</a>
+                    <a href="#" onclick="openSheet('Master Data Ikan')">Master Data Ikan</a>
+                    <a href="#" onclick="openSheet('Data Ikan Bali Aquarich')">Data Ikan Bali Aquarich</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">🚢 PEMBELIAN ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('Nota')">Nota</a>
+                    <a href="#" onclick="openSheet('Pembelian Ikan')">Pembelian Ikan</a>
+                    <a href="#" onclick="openSheet('Stok List Wild')">Stok List Wild</a>
+                    <a href="#" onclick="openSheet('Stok List Culture')">Stok List Culture</a>
+                    <a href="#" onclick="openSheet('Stok List')">Stok List</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('Tgl Order')">Tgl Order</a>
+                    <a href="#" onclick="openSheet('Order')">Order</a>
+                    <a href="#" onclick="openSheet('Invoice')">Invoice</a>
+                    <a href="#" onclick="openSheet('Box')">Box</a>
+                    <a href="#" onclick="openSheet('Pengiriman Ikan')">Pengiriman Ikan</a>
+                    <a href="#" onclick="openSheet('List Packing')">List Packing</a>
+                    <a href="#" onclick="openSheet('Dead On Arrival')">Dead On Arrival</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">📊 STOK ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('Opname')">Opname</a>
+                    <a href="#" onclick="openSheet('Rekap Stok')">Rekap Stok</a>
+                    <a href="#" onclick="openSheet('Laporan Stok')">Laporan Stok</a>
+                    <a href="#" onclick="openSheet('Kematian')">Kematian</a>
+                    <a href="#" onclick="openSheet('Kerusakan')">Kerusakan</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="databaseSection">
+        <div style="display: flex; gap: 15px; align-items: center; max-width: 1400px; margin: 0 auto;">
+            <button onclick="goHome()" class="btn-back">⬅ HOME</button>
+            <h2 id="tableTitle" style="color: var(--neon); margin: 0; font-size: 20px; text-transform: uppercase;"></h2>
+            <input type="text" id="searchInput" placeholder="Ketik untuk mencari data...">
+        </div>
+        
+        <div id="loader">
+            <h2>⚡ MENGHUBUNGKAN KE GOOGLE CLOUD...</h2>
+            <p>Mohon tunggu sebentar</p>
+        </div>
+
+        <div class="table-wrapper" id="tableContainer"></div>
+    </section>
+
+    <script>
+        // LINK API YANG SUDAH DIPERBAIKI (TANPA HURUF 'U')
+        const API_URL = "https://script.google.com/macros/s/AKfycbyiYKUhecGfXLaOLRn5lW3qIgBdh1F0PHTOEvcel72wxXiXXzHdaQV_201Jixmb4be3/exec"; 
+        let currentData = [];
+
+        // Fungsi Membuka Tabel
+        function openSheet(name) {
+            document.getElementById('homeHeader').style.display = 'none';
+            document.getElementById('databaseSection').style.display = 'block';
+            document.getElementById('tableTitle').innerText = name;
+            document.body.style.backgroundImage = "none";
+            document.body.style.backgroundColor = "#000";
+            fetchData(name);
+        }
+
+        // Fungsi Kembali ke Beranda
+        function goHome() {
+            document.getElementById('homeHeader').style.display = 'block';
+            document.getElementById('databaseSection').style.display = 'none';
+            document.body.style.backgroundImage = "linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1524704659690-3f7a37d9ee23?q=80&w=2070')";
+            document.getElementById('tableContainer').innerHTML = "";
+            document.getElementById('searchInput').value = "";
+        }
+
+        // Ambil Data dari Google Sheets
+        async function fetchData(sheetName) {
+            const loader = document.getElementById('loader');
+            const container = document.getElementById('tableContainer');
+            loader.style.display = 'block';
+            container.innerHTML = "";
+
+            try {
+                const response = await fetch(`${API_URL}?action=getData&sheet=${sheetName}`);
+                const data = await response.json();
+                
+                if (data.length > 0) {
+                    currentData = data;
+                    renderTable(data);
+                } else {
+                    container.innerHTML = `<p style="text-align:center; padding:20px;">Sheet "${sheetName}" kosong atau tidak ditemukan.</p>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<p style="color:red; text-align:center; padding:20px;">Error: Gagal menyambungkan ke API. Cek izin Deployment.</p>`;
+            }
+            loader.style.display = 'none';
+        }
+
+        // Render Data ke Tabel
+        function renderTable(rows) {
+            if (!rows || rows.length === 0) return;
+            
+            let html = "<table><thead><tr>";
+            // Header baris pertama
+            rows[0].forEach(h => html += `<th>${h}</th>`);
+            html += "</tr></thead><tbody>";
+
+            // Baris data (mulai dari index 1)
+            for(let i=1; i < rows.length; i++) {
+                html += "<tr>";
+                rows[i].forEach(cell => {
+                    let content = cell;
+                    // Deteksi jika sel berisi link gambar
+                    if (String(cell).startsWith("http") && (cell.match(/\.(jpeg|jpg|gif|png|webp)$/) != null || cell.includes("drive.google.com"))) {
+                        content = `<img src="${cell}" class="img-cell" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">`;
+                    }
+                    html += `<td>${content}</td>`;
+                });
+                html += "</tr>";
+            }
+            html += "</tbody></table>";
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        // Fungsi Pencarian Real-time
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            if (!currentData || currentData.length === 0) return;
+
+            const filtered = [currentData[0], ...currentData.slice(1).filter(row => 
+                row.some(cell => String(cell).toLowerCase().includes(term))
+            )];
+            renderTable(filtered);
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FISH APP-V3 | Management System</title>
+    <style>
+        :root { --neon: #00d2ff; --bg: #0b0b0b; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            color: #efefef; 
+            margin: 0;
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), 
+                              url('https://images.unsplash.com/photo-1524704659690-3f7a37d9ee23?q=80&w=2070');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
         /* --- HEADER --- */
