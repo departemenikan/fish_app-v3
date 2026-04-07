@@ -1,252 +1,94 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISH APP-V3 | Ultra Compact & Dynamic</title>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <style>
-        :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; --dark-grey: #121212; }
-        
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background: var(--bg); 
-            color: #efefef; 
-            margin: 0;
-            overflow-x: hidden;
-        }
+<style>
+    :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; --dark-grey: #121212; }
+    
+    body { 
+        font-family: 'Segoe UI', Arial, sans-serif; 
+        background: var(--bg); 
+        color: #efefef; 
+        margin: 0;
+        padding: 0; /* Pastikan nol */
+        overflow-x: hidden;
+    }
 
-        /* --- HEADER & FULL MENU NAVIGATION --- */
-        header { text-align: center; padding: 20px 10px; background: #000; border-bottom: 1px solid #222; }
-        h1 { font-size: 28px; letter-spacing: 4px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
-        .subtitle { color: var(--neon); font-size: 10px; margin-bottom: 15px; letter-spacing: 1px; }
+    /* --- HEADER --- */
+    header { text-align: center; padding: 20px 10px; background: #000; border-bottom: 1px solid #222; }
+    h1 { font-size: 28px; letter-spacing: 4px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
+    .subtitle { color: var(--neon); font-size: 10px; margin-bottom: 15px; letter-spacing: 1px; }
 
-        .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
-        .dropdown { position: relative; display: inline-block; }
-        .dropbtn {
-            background: rgba(0,0,0,0.8); color: var(--neon); padding: 6px 12px;
-            font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer;
-            text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px;
-        }
+    .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+    .dropdown { position: relative; display: inline-block; }
+    .dropbtn {
+        background: rgba(0,0,0,0.8); color: var(--neon); padding: 6px 12px;
+        font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer;
+        text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px;
+    }
+    .dropdown-content {
+        display: none; position: absolute; background-color: #111; min-width: 160px;
+        z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1);
+    }
+    .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 11px; }
+    .dropdown-content a:hover { background: var(--neon); color: #000; }
+    .dropdown:hover .dropdown-content { display: block; }
 
-        .dropdown-content {
-            display: none; position: absolute; background-color: #111; min-width: 160px;
-            z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1);
-        }
-        
-        .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 11px; }
-        .dropdown-content a:hover { background: var(--neon); color: #000; }
-        .dropdown:hover .dropdown-content { display: block; }
+    /* --- DATABASE SECTION FULL WIDTH --- */
+    #databaseSection { display: none; background: #000; min-height: 100vh; padding: 0; } /* Padding 0 agar nempel ke pinggir */
+    
+    .controls { 
+        display: flex; gap: 8px; align-items: center; 
+        padding: 5px 10px; background: #080808; border-bottom: 1px solid #222; 
+    }
+    
+    .btn { padding: 5px 10px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 10px; color: white; }
+    .btn-home { background: var(--accent); }
+    .btn-col { background: #333; border: 1px solid var(--neon); color: var(--neon); }
 
-        /* --- DATABASE SECTION --- */
-        #databaseSection { display: none; background: #000; min-height: 100vh; padding: 5px; }
-        .controls { display: flex; gap: 8px; align-items: center; padding: 5px; background: #080808; border-bottom: 1px solid #222; }
-        
-        .btn { padding: 5px 10px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 10px; color: white; }
-        .btn-home { background: var(--accent); }
-        .btn-col { background: #333; border: 1px solid var(--neon); color: var(--neon); }
+    #searchInput { flex: 1; padding: 5px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 2px; font-size: 11px; outline: none; }
 
-        #searchInput { flex: 1; padding: 5px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 2px; font-size: 11px; outline: none; }
+    /* --- TABLE SUPER RAPAT & FULL WIDTH --- */
+    .table-wrapper { 
+        overflow: auto; 
+        height: calc(100vh - 50px); /* Sesuaikan tinggi dengan controls */
+        width: 100%; /* Full ke kanan kiri */
+        margin: 0;
+        padding: 0;
+    }
 
-        /* --- COLUMN FILTER PANEL --- */
-        #columnFilterPanel {
-            display: none; background: var(--dark-grey); padding: 8px;
-            border: 1px solid var(--neon); margin: 5px 0; border-radius: 3px;
-            max-height: 120px; overflow-y: auto;
-        }
-        .filter-item { display: inline-flex; align-items: center; margin-right: 12px; font-size: 10px; cursor: pointer; color: #aaa; }
-        .filter-item input { margin-right: 4px; }
+    table { 
+        border-collapse: collapse; 
+        width: 100%; /* Ini yang bikin kanan kiri penuh */
+        table-layout: auto; /* Biar kolom menyesuaikan isi secara otomatis tapi tetap penuh */
+    }
 
-        /* --- TABLE ULTRA COMPACT (SS 63 STYLE) --- */
-        .table-wrapper { overflow: auto; height: 85vh; border: 1px solid #222; }
-        table { border-collapse: collapse; width: auto; min-width: 100%; table-layout: auto; }
+    th { 
+        background: #1a1a1a; color: var(--neon); 
+        padding: 4px 6px; 
+        position: sticky; top: 0; white-space: nowrap; 
+        text-align: left; font-size: 10px; z-index: 10; border: 1px solid #333;
+    }
 
-        th { 
-            background: #1a1a1a; color: var(--neon); 
-            padding: 4px 6px; /* Super Rapat */
-            position: sticky; top: 0; white-space: nowrap; 
-            text-align: left; font-size: 10px; z-index: 10; border: 1px solid #333;
-        }
+    td { 
+        padding: 2px 6px; 
+        border: 1px solid #222; 
+        white-space: nowrap; 
+        font-size: 10px; 
+        color: #ddd; 
+        line-height: 1.1; 
+    }
 
-        td { 
-            padding: 2px 6px; /* Super Rapat Tinggi Baris */
-            border: 1px solid #222; white-space: nowrap; 
-            font-size: 10px; color: #ddd; line-height: 1; 
-        }
+    tr:nth-child(even) { background: #050505; }
+    tr:hover { background: #151515; }
+    
+    .img-cell { height: 22px; width: auto; border-radius: 1px; vertical-align: middle; }
+    .hidden-col { display: none; }
 
-        tr:nth-child(even) { background: #050505; }
-        tr:hover { background: #151515; }
-        
-        .img-cell { height: 22px; width: auto; border-radius: 1px; vertical-align: middle; }
-        .hidden-col { display: none; }
+    #loader { text-align: center; color: var(--neon); padding: 50px; display: none; font-size: 12px; }
 
-        #loader { text-align: center; color: var(--neon); padding: 50px; display: none; font-size: 12px; }
-    </style>
-</head>
-<body>
-
-    <header id="mainHeader">
-        <h1>FISH APP-V3</h1>
-        <div class="subtitle">Advanced Management System for Fish & Coral</div>
-        
-        <div class="nav-container">
-            <div class="dropdown">
-                <button class="dropbtn">📁 DATABASE ▾</button>
-                <div class="dropdown-content">
-                    <a href="#" onclick="openSheet('User')">User</a>
-                    <a href="#" onclick="openSheet('Customer')">Customer</a>
-                    <a href="#" onclick="openSheet('Data Supplier')">Data Supplier</a>
-                    <a href="#" onclick="openSheet('Harga Supplier')">Harga Supplier</a>
-                    <a href="#" onclick="openSheet('Master Data Ikan')">Master Data Ikan</a>
-                    <a href="#" onclick="openSheet('Data Ikan Bali Aquarich')">Data Ikan Bali Aquarich</a>
-                </div>
-            </div>
-
-            <div class="dropdown">
-                <button class="dropbtn">🚢 PEMBELIAN ▾</button>
-                <div class="dropdown-content">
-                    <a href="#" onclick="openSheet('Nota')">Nota</a>
-                    <a href="#" onclick="openSheet('Pembelian Ikan')">Pembelian Ikan</a>
-                    <a href="#" onclick="openSheet('Stok List Wild')">Stok List Wild</a>
-                    <a href="#" onclick="openSheet('Stok List Culture')">Stok List Culture</a>
-                    <a href="#" onclick="openSheet('Stok List')">Stok List</a>
-                </div>
-            </div>
-
-            <div class="dropdown">
-                <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
-                <div class="dropdown-content">
-                    <a href="#" onclick="openSheet('Tgl Order')">Tgl Order</a>
-                    <a href="#" onclick="openSheet('Order')">Order</a>
-                    <a href="#" onclick="openSheet('Invoice')">Invoice</a>
-                    <a href="#" onclick="openSheet('Box')">Box</a>
-                    <a href="#" onclick="openSheet('Pengiriman Ikan')">Pengiriman Ikan</a>
-                    <a href="#" onclick="openSheet('Dead On Arrival')">Dead On Arrival</a>
-                    <a href="#" onclick="openSheet('List Packing')">List Packing</a>
-                </div>
-            </div>
-
-            <div class="dropdown">
-                <button class="dropbtn">📊 STOK ▾</button>
-                <div class="dropdown-content">
-                    <a href="#" onclick="openSheet('Opname')">Opname</a>
-                    <a href="#" onclick="openSheet('Kematian')">Kematian</a>
-                    <a href="#" onclick="openSheet('Kerusakan')">Kerusakan</a>
-                    <a href="#" onclick="openSheet('Rekap Stok')">Rekap Stok</a>
-                    <a href="#" onclick="openSheet('Laporan Stok')">Laporan Stok</a>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <section id="databaseSection">
-        <div class="controls">
-            <button onclick="goHome()" class="btn btn-home">⬅ KEMBALI</button>
-            <button onclick="toggleFilterPanel()" class="btn btn-col">⚙️ KOLOM</button>
-            <input type="text" id="searchInput" placeholder="Cari data di tabel ini...">
-        </div>
-
-        <div id="columnFilterPanel">
-            <div id="filterCheckboxes"></div>
-        </div>
-        
-        <div id="loader">⚡ LOADING DATA...</div>
-        <div class="table-wrapper" id="tableContainer"></div>
-    </section>
-
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOasisnR1DTEmmsvhLDcNTogQw13f5MkX0U-vUpnHNzWLiSdgO7EisEzM2EgDnYhtP/exec"; 
-        
-        let rawData = [];
-        let headers = [];
-        let visibleColumns = [];
-
-        async function openSheet(sheetName) {
-            document.getElementById('mainHeader').style.display = 'none';
-            document.getElementById('databaseSection').style.display = 'block';
-            document.getElementById('tableContainer').innerHTML = "";
-            document.getElementById('filterCheckboxes').innerHTML = "";
-            await loadData(sheetName);
-        }
-
-        function goHome() {
-            document.getElementById('mainHeader').style.display = 'block';
-            document.getElementById('databaseSection').style.display = 'none';
-            document.getElementById('columnFilterPanel').style.display = 'none';
-        }
-
-        async function loadData(sheet) {
-            document.getElementById('loader').style.display = 'block';
-            try {
-                const response = await fetch(`${SCRIPT_URL}?action=read&sheet=${sheet}`);
-                const result = await response.json();
-                if (result.status === "success") {
-                    rawData = result.data;
-                    headers = rawData[0];
-                    visibleColumns = headers.map((_, i) => i);
-                    createFilterCheckboxes();
-                    renderTable();
-                }
-            } catch (e) { console.error(e); }
-            document.getElementById('loader').style.display = 'none';
-        }
-
-        function createFilterCheckboxes() {
-            const container = document.getElementById('filterCheckboxes');
-            headers.forEach((h, i) => {
-                const label = document.createElement('label');
-                label.className = 'filter-item';
-                label.innerHTML = `<input type="checkbox" checked onchange="toggleColumn(${i}, this.checked)"> ${h}`;
-                container.appendChild(label);
-            });
-        }
-
-        function toggleColumn(index, isVisible) {
-            if (isVisible) { if (!visibleColumns.includes(index)) visibleColumns.push(index); } 
-            else { visibleColumns = visibleColumns.filter(i => i !== index); }
-            renderTable();
-        }
-
-        function toggleFilterPanel() {
-            const panel = document.getElementById('columnFilterPanel');
-            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function renderTable() {
-            if (rawData.length === 0) return;
-            let html = `<table id="mainTable"><thead><tr id="headerRow">`;
-            headers.forEach((h, i) => {
-                const hide = visibleColumns.includes(i) ? "" : "hidden-col";
-                html += `<th class="${hide}">${h}</th>`;
-            });
-            html += `</tr></thead><tbody>`;
-
-            for (let i = 1; i < rawData.length; i++) {
-                html += "<tr>";
-                rawData[i].forEach((cell, idx) => {
-                    const hide = visibleColumns.includes(idx) ? "" : "hidden-col";
-                    let val = cell || "";
-                    if (typeof val === 'string' && val.includes("http")) {
-                        val = `<img src="${val}" class="img-cell" onerror="this.parentElement.innerHTML='No Image'">`;
-                    }
-                    html += `<td class="${hide}">${val}</td>`;
-                });
-                html += "</tr>";
-            }
-            html += "</tbody></table>";
-            document.getElementById('tableContainer').innerHTML = html;
-
-            // Enable Reordering
-            Sortable.create(document.getElementById('headerRow'), { animation: 150 });
-        }
-
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const val = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll("#mainTable tbody tr");
-            rows.forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(val) ? "" : "none";
-            });
-        });
-    </script>
-</body>
-</html>
+    /* Panel Kolom melayang agar tidak dorong tabel */
+    #columnFilterPanel {
+        display: none; position: absolute; top: 40px; left: 10px; 
+        background: var(--dark-grey); padding: 10px;
+        border: 1px solid var(--neon); z-index: 500; border-radius: 3px;
+        max-height: 250px; overflow-y: auto; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    .filter-item { display: block; margin-bottom: 5px; font-size: 10px; cursor: pointer; color: #aaa; }
+</style>
