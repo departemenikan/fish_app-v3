@@ -97,6 +97,8 @@
         .filter-item { display: block; margin-bottom: 4px; font-size: 10px; color: #aaa; cursor: pointer; }
 
         body.resizing, body.resizing * { cursor: col-resize !important; user-select: none !important; }
+        /* Class bantu untuk menyembunyikan kolom dengan cepat */
+.force-hide { display: none !important; }
     </style>
 </head>
 <body>
@@ -309,21 +311,25 @@ function createFilterCheckboxes() {
 }
 
 function toggleCol(i, show) {
-    // Pastikan i adalah integer
+    // 1. Update state internal
     const index = parseInt(i);
-    
     if (show) {
-        if (!visibleColumns.includes(index)) {
-            visibleColumns.push(index);
-        }
+        if (!visibleColumns.includes(index)) visibleColumns.push(index);
     } else {
         visibleColumns = visibleColumns.filter(x => x !== index);
     }
+
+    // 2. Manipulasi DOM secara langsung (Jauh lebih cepat daripada buildTable)
+    // Cari semua TH dan TD yang berada di urutan kolom tersebut
+    const cells = document.querySelectorAll(`#tableContainer table tr > *:nth-child(${index + 1})`);
     
-    // Urutkan kembali agar buildTable tidak bingung dengan urutan kolom
-    visibleColumns.sort((a, b) => a - b);
-    
-    buildTable();
+    cells.forEach(cell => {
+        if (show) {
+            cell.classList.remove('hidden-col', 'force-hide');
+        } else {
+            cell.classList.add('force-hide');
+        }
+    });
 }
 
 function toggleFilterPanel() {
