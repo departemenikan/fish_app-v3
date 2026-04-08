@@ -4,114 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FISH APP-V3 | High Performance</title>
-    <script src="https://cdn.jsdeliver.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
     <style>
+        /* --- PART 1: VARIABEL & BASE STYLE --- */
         :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #efefef; margin: 0; padding: 0; overflow: hidden; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: var(--bg); color: #efefef; 
+            margin: 0; padding: 0; overflow-x: hidden; 
+        }
+
+        /* --- PART 2: HEADER & NAVIGASI --- */
         header { text-align: center; padding: 15px 10px; background: #000; border-bottom: 1px solid #222; }
         h1 { font-size: 26px; letter-spacing: 3px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
         .subtitle { color: var(--neon); font-size: 9px; margin-bottom: 12px; letter-spacing: 1px; }
         
         .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
         .dropdown { position: relative; display: inline-block; }
-        .dropbtn { background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px; font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer; text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px; }
-        .dropdown-content { display: none; position: absolute; background-color: #111; min-width: 160px; z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1); }
+        .dropbtn { 
+            background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px; 
+            font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; 
+            cursor: pointer; text-transform: uppercase; font-size: 10px; 
+            display: flex; align-items: center; gap: 5px; 
+        }
+        .dropdown-content { 
+            display: none; position: absolute; background-color: #111; 
+            min-width: 170px; z-index: 100; border: 1px solid var(--neon); 
+            box-shadow: 0 8px 16px rgba(0,0,0,1); 
+        }
         .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 10px; }
         .dropdown-content a:hover { background: var(--neon); color: #000; }
         .dropdown:hover .dropdown-content { display: block; }
 
-        #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
-        .controls { display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: #080808; border-bottom: 1px solid #222; }
-        .btn { padding: 3px 7px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 9px; color: white; }
-        .btn-home { background: var(--accent); }
-        .btn-col  { background: #222; border: 1px solid var(--neon); color: var(--neon); }
-        .btn-reset{ background: #1a1a1a; border: 1px solid #444; color: #888; }
+        /* --- PART 3: HOME PAGE --- */
+        #homePageContent {
+            height: calc(100vh - 105px); width: 100%;
+            display: flex; justify-content: center; align-items: flex-start;
+            background: #000; overflow: hidden;
+        }
+        .home-logo { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
 
-        /* Search Input Styling */
-        #searchInput { 
-            width: 180px; 
-            padding: 3px 8px; 
+        /* --- PART 4: PANEL FILTER --- */
+        .controls { 
+            display: flex; gap: 6px; align-items: center; padding: 6px 10px; 
+            background: #080808; border-bottom: 1px solid #222; 
+            position: relative;
+        }
+
+        #columnFilterPanel { 
+            display: none; 
+            position: absolute; 
+            top: 40px; 
+            left: 85px; 
             background: #111; 
-            color: var(--neon); 
-            border: 1px solid #333; 
+            border: 1px solid var(--neon); 
+            padding: 10px; 
             border-radius: 4px; 
-            font-size: 10px; 
-            outline: none;
-            -webkit-appearance: textfield;
-        }
-        #searchInput::-webkit-search-cancel-button {
-            -webkit-appearance: none;
-            height: 12px; width: 12px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2300d2ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>') no-repeat center;
-            background-size: contain;
-            cursor: pointer;
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.9);
+            z-index: 1000; 
+            width: 280px; 
+            max-height: 450px; 
+            overflow-y: auto;
         }
 
-        .table-wrapper { overflow: auto; height: calc(100vh - 80px); width: 100%; position: relative; }
+        .filter-item { 
+            font-size: 11px; color: #ccc; display: flex; align-items: center; 
+            gap: 10px; cursor: pointer; padding: 6px 8px; border-radius: 3px;
+            border-bottom: 1px solid #222;
+        }
+        .filter-item:hover { background: #222; color: var(--neon); }
+        .filter-item input { accent-color: var(--neon); cursor: pointer; }
+
+        /* --- PART 5: DATABASE SECTION & TABLE --- */
+        #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
+        .btn { padding: 4px 8px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 9px; color: white; text-transform: uppercase; }
+        .btn-home { background: var(--accent); }
+        .btn-col { background: #222; border: 1px solid var(--neon); color: var(--neon); }
+        .btn-reset { background: #1a1a1a; border: 1px solid #444; color: #888; }
+        
+        #searchInput { 
+            width: 180px; padding: 4px 8px; background: #111; color: var(--neon); 
+            border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none;
+        }
+
+        .table-wrapper { overflow: auto; height: calc(100vh - 90px); width: 100%; position: relative; }
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
-        /* GANTI BAGIAN TH (HEADER) */
-th { 
-    background: #1a1a1a; 
-    color: var(--neon); 
-    padding: 8px 4px; 
-    position: sticky; 
-    top: 0; 
-    text-align: center; /* Judul di tengah */
-    font-size: 10px; 
-    z-index: 10; 
-    border: 1px solid #2a2a2a; 
-    white-space: normal; /* Aktifkan Wrap Text */
-    word-wrap: break-word;
-    vertical-align: middle;
-}
+        th { 
+            background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; 
+            top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; 
+        }
+        td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; }
+        .img-cell { max-height: 20px; width: auto; display: block; margin: 0 auto; border-radius: 2px; }
+        .hidden-col { display: none; }
 
-/* GANTI BAGIAN TD (ISI TABEL) */
-td { 
-    padding: 6px 4px; 
-    border: 1px solid #1a1a1a; 
-    font-size: 10px; 
-    color: #ccc; 
-    white-space: normal; /* Aktifkan Wrap Text */
-    word-wrap: break-word;
-    vertical-align: middle; 
-}
+        /* ALIGNMENT CLASSES */
+        .text-center { text-align: center !important; }
+        .text-right { text-align: right !important; }
 
-/* TAMBAHKAN ATURAN KHUSUS UNTUK KOLOM TENGAH */
-/* Kolom 4(Image), 11(Size), 12(Approx), 13(Approx) */
-td:nth-child(4), th:nth-child(4),
-td:nth-child(11), th:nth-child(11),
-td:nth-child(12), th:nth-child(12),
-td:nth-child(13), th:nth-child(13) {
-    text-align: center;
-}
-
-/* GANTI BAGIAN .IMG-CELL */
-.img-cell { 
-    height: auto; 
-    max-height: 20px; /* Ukuran gambar sedikit lebih besar agar jelas */
-    width: auto; 
-    max-width: 100%;
-    vertical-align: middle; 
-    border-radius: 2px;
-    display: block;
-    margin: 0 auto;
-}
-
-        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon); font-size: 12px; z-index: 1000; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 5px; display: none; border: 1px solid var(--neon); text-align: center; }
-        #columnFilterPanel { display: none; position: absolute; top: 40px; left: 10px; background: #111; border: 1px solid var(--neon); z-index: 500; padding: 10px; max-height: 70vh; overflow-y: auto; }
-        .filter-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 10px; color: #aaa; }
-        .hidden-col { display: none !important; }
-
-        /* Modal Styling */
-        #editModal { display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); }
-        .modal-content { background:#111; margin:10% auto; padding:20px; border:1px solid var(--neon); width:90%; max-width:400px; border-radius:8px; box-shadow:0 0 20px rgba(0,210,255,0.3); }
-        .modal-content h3 { color:var(--neon); margin-top:0; font-size:16px; letter-spacing:1px; margin-bottom:15px; }
-        .modal-content label { font-size:10px; color:#888; display:block; margin-top:15px; }
-        .modal-content input[type="text"] { width:100%; background:#222; color:#fff; border:1px solid #333; padding:8px; margin-top:5px; box-sizing:border-box; border-radius:4px; outline:none; }
-        .modal-content input[type="file"] { width: 100%; font-size:10px; color:#ccc; margin-top:10px; display: block; }
-        .modal-footer { display:flex; gap:10px; margin-top:25px; }
-        .btn-save { flex:1; background:var(--neon); color:#000; padding:10px; border:none; font-weight:bold; cursor:pointer; border-radius:4px; }
-        .btn-cancel { flex:1; background:#333; color:#fff; padding:10px; border:none; cursor:pointer; border-radius:4px; }
+        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon); z-index: 2000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
     </style>
 </head>
 <body>
@@ -120,6 +111,7 @@ td:nth-child(13), th:nth-child(13) {
     <h1>FISH APP-V3</h1>
     <div class="subtitle">Sistem Management Inventory Ikan</div>
     <div class="nav-container">
+        <!-- MENU 1: DATABASE -->
         <div class="dropdown">
             <button class="dropbtn">📁 DATABASE ▾</button>
             <div class="dropdown-content">
@@ -131,6 +123,7 @@ td:nth-child(13), th:nth-child(13) {
                 <a href="#" onclick="openSheet('Data Ikan Bali Aquarich')">Data Ikan Bali Aquarich</a>
             </div>
         </div>
+        <!-- MENU 2: PEMBELIAN -->
         <div class="dropdown">
             <button class="dropbtn">🚢 PEMBELIAN ▾</button>
             <div class="dropdown-content">
@@ -141,6 +134,7 @@ td:nth-child(13), th:nth-child(13) {
                 <a href="#" onclick="openSheet('Stok List')">Stok List</a>
             </div>
         </div>
+        <!-- MENU 3: PENGIRIMAN -->
         <div class="dropdown">
             <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
             <div class="dropdown-content">
@@ -153,6 +147,7 @@ td:nth-child(13), th:nth-child(13) {
                 <a href="#" onclick="openSheet('List Packing')">List Packing</a>
             </div>
         </div>
+        <!-- MENU 4: STOK -->
         <div class="dropdown">
             <button class="dropbtn">📊 STOK ▾</button>
             <div class="dropdown-content">
@@ -166,55 +161,52 @@ td:nth-child(13), th:nth-child(13) {
     </div>
 </header>
 
+<section id="homePageContent">
+    <img src="Home_Image.png" alt="Fish App Logo" class="home-logo">
+</section>
+
 <section id="databaseSection">
     <div class="controls">
         <button onclick="goHome()" class="btn btn-home">⬅ KEMBALI</button>
-        <button onclick="toggleFilterPanel()" class="btn btn-col">⚙ KOLOM</button>
+        <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol">⚙ KOLOM</button>
+        
+        <div id="columnFilterPanel">
+            <div id="filterCheckboxes"></div>
+        </div>
+
         <button onclick="resetWidths()" class="btn btn-reset">↺ RESET</button>
         <span style="flex: 1;"></span>
         <input type="search" id="searchInput" placeholder="Cari data...">
     </div>
-    <div id="columnFilterPanel"><div id="filterCheckboxes"></div></div>
+
     <div id="loader">⚡ LOADING DATA...</div>
+
     <div class="table-wrapper" id="scrollWrapper" onscroll="handleScroll()">
         <div id="tableContainer"></div>
     </div>
 </section>
 
-<div id="editModal">
-    <div class="modal-content">
-        <h3>EDIT DATA</h3>
-        <input type="hidden" id="editRowIndex">
-        
-        <label>COMMON NAME (KOLOM 6)</label>
-        <input type="text" id="editCommonName" placeholder="Masukkan nama ikan...">
-        
-        <label>UPDATE GAMBAR (KOLOM 4)</label>
-        <input type="file" id="imageUpload" accept="image/*">
-        <p style="font-size:8px; color:#666; margin-top:5px;">*Format akan dikonversi ke Base64</p>
-        
-        <div class="modal-footer">
-            <button onclick="saveEdit()" class="btn-save">SIMPAN</button>
-            <button onclick="closeEdit()" class="btn-cancel">BATAL</button>
-        </div>
-    </div>
-</div>
-
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOasisnR1DTEmmsvhLDcNTogQw13f5MkX0U-vUpnHNzWLiSdgO7EisEzM2EgDnYhtP/exec";
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
-let itemsToShow = 50, currentSheetName = "";
+let itemsToShow = 50;
 
 async function openSheet(sheetName) {
-    currentSheetName = sheetName;
-    document.getElementById('searchInput').value = ''; 
+    // FIX: Bersihkan kontainer agar data lama hilang sebelum loading data baru
+    document.getElementById('tableContainer').innerHTML = '';
+    
     document.getElementById('loader').style.display = 'block';
     document.getElementById('mainHeader').style.display = 'none';
+    document.getElementById('homePageContent').style.display = 'none'; 
     document.getElementById('databaseSection').style.display = 'block';
-    document.getElementById('tableContainer').innerHTML = '';
-    itemsToShow = 50; 
     await loadData(sheetName);
+}
+
+function goHome() { 
+    document.getElementById('mainHeader').style.display = 'block'; 
+    document.getElementById('homePageContent').style.display = 'flex'; 
+    document.getElementById('databaseSection').style.display = 'none'; 
 }
 
 async function loadData(sheet) {
@@ -232,123 +224,87 @@ async function loadData(sheet) {
     document.getElementById('loader').style.display = 'none';
 }
 
-function computeWidths() {
-    const cv = document.createElement('canvas');
-    const cx = cv.getContext('2d');
-    cx.font = '9px Segoe UI';
-    colWidths = headers.map((h, i) => {
-        let max = Math.ceil(cx.measureText(h).width) + 20;
-        const sample = Math.min(rawData.length, 30);
-        for (let r = 1; r < sample; r++) {
-            const str = String(rawData[r][i] || "");
-            const w = Math.ceil(cx.measureText(str).width) + 15;
-            if (w > max) max = w;
-        }
-        return Math.min(Math.max(max, 50), 180);
+function createFilterCheckboxes() {
+    const container = document.getElementById('filterCheckboxes');
+    container.innerHTML = '';
+    headers.forEach((h, i) => {
+        const lbl = document.createElement('label');
+        lbl.className = 'filter-item';
+        lbl.innerHTML = `<input type="checkbox" checked onchange="toggleCol(${i},this.checked)"> ${h}`;
+        container.appendChild(lbl);
     });
 }
 
+function toggleCol(i, show) {
+    if (show) { if (!visibleColumns.includes(i)) visibleColumns.push(i); }
+    else { visibleColumns = visibleColumns.filter(x => x !== i); }
+    buildTable();
+}
+
+function toggleFilterPanel(event) { 
+    event.stopPropagation();
+    const p = document.getElementById('columnFilterPanel'); 
+    p.style.display = p.style.display === 'block' ? 'none' : 'block'; 
+}
+
+window.onclick = function(e) {
+    const panel = document.getElementById('columnFilterPanel');
+    const btn = document.getElementById('btnFilterCol');
+    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
+    }
+}
+
+function computeWidths() {
+    colWidths = headers.map(h => Math.min(Math.max(h.length * 8, 70), 200));
+}
+
 function buildTable() {
-    let html = '<table><thead><tr id="headerRow">';
+    let html = '<table><thead><tr>';
     headers.forEach((h, i) => {
         const hide = visibleColumns.includes(i) ? '' : 'hidden-col';
-        html += `<th class="${hide}" data-col="${i}" style="width:${colWidths[i]}px">
-                    <span class="col-label">${h}</span>
-                    <div class="resizer" data-col="${i}"></div>
-                </th>`;
+        html += `<th class="${hide}" style="width:${colWidths[i]}px">${h}</th>`;
     });
     html += '</tr></thead><tbody id="tableBody">';
     html += renderRows(1, itemsToShow);
     html += '</tbody></table>';
     document.getElementById('tableContainer').innerHTML = html;
-    initResizers();
 }
 
 function renderRows(start, end) {
     let html = '';
     const limit = Math.min(rawData.length, end);
     for (let r = start; r < limit; r++) {
-        html += `<tr onclick="openEditForm(${r})">`;
+        html += `<tr>`;
         rawData[r].forEach((cell, idx) => {
             const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
             let val = cell || '';
+            
+            // LOGIKA PERATAAN TEXT
+            let alignClass = '';
+            if (idx >= 9 && idx <= 12) alignClass = 'text-center'; // Kolom 10-13 (index 9-12)
+            if (idx >= 13 && idx <= 16) alignClass = 'text-right'; // Kolom 14-17 (index 13-16)
+
             if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image'))) {
                 val = `<img src="${val}" class="img-cell" loading="lazy">`;
             }
-            html += `<td class="${hide}" style="max-width:${colWidths[idx]}px">${val}</td>`;
+            html += `<td class="${hide} ${alignClass}">${val}</td>`;
         });
         html += '</tr>';
     }
     return html;
 }
 
-function openEditForm(rowIndex) {
-    const data = rawData[rowIndex];
-    document.getElementById('editRowIndex').value = rowIndex;
-    document.getElementById('editCommonName').value = data[5] || ""; 
-    document.getElementById('editModal').style.display = 'block';
+function renderTable() { 
+    itemsToShow = 50;
+    computeWidths(); 
+    buildTable(); 
 }
 
-function closeEdit() {
-    document.getElementById('editModal').style.display = 'none';
-    document.getElementById('imageUpload').value = "";
-}
-
-function saveEdit() {
-    const fileInput = document.getElementById('imageUpload');
-    const rowIndex = document.getElementById('editRowIndex').value;
-    const newName = document.getElementById('editCommonName').value;
-    const file = fileInput.files[0];
-
-    document.getElementById('loader').innerText = "💾 SAVING DATA...";
-    document.getElementById('loader').style.display = "block";
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            updateDataToSheet(rowIndex, newName, e.target.result);
-        };
-        reader.readAsDataURL(file);
-    } else {
-        updateDataToSheet(rowIndex, newName, null);
-    }
-}
-
-async function updateDataToSheet(rowIndex, newName, imgData) {
-    const rowNumber = parseInt(rowIndex) + 1; 
-    
-    // Gunakan URLSearchParams agar lebih ramah terhadap CORS
-    const params = new URLSearchParams();
-    params.append('action', 'update');
-    params.append('sheet', currentSheetName);
-    params.append('row', rowNumber);
-    params.append('name', newName);
-    if (imgData) params.append('image', imgData);
-
-    try {
-        // Kirim sebagai teks biasa (plain text) untuk melewati blokir CORS
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Menghindari pengecekan CORS yang ketat
-            body: params
-        });
-
-        // Karena menggunakan 'no-cors', browser tidak bisa membaca isi responnya, 
-        // tapi data tetap masuk ke Google Sheets.
-        
-        // Update tampilan secara manual (Asumsi berhasil)
-        rawData[rowIndex][5] = newName;
-        if (imgData) rawData[rowIndex][3] = imgData;
-        
-        closeEdit();
-        buildTable();
-        alert("Data berhasil di Update. Silakan cek tabel..!");
-
-    } catch (e) {
-        console.error("Error Detail:", e);
-        alert("Gagal terhubung server. Pastikan Deployment Apps Script sudah 'Anyone'.");
-    }
-    document.getElementById('loader').style.display = "none";
+function resetWidths() { 
+    visibleColumns = headers.map((_, i) => i);
+    createFilterCheckboxes();
+    renderTable(); 
 }
 
 function handleScroll() {
@@ -360,85 +316,6 @@ function handleScroll() {
             document.getElementById('tableBody').insertAdjacentHTML('beforeend', renderRows(start, itemsToShow));
         }
     }
-}
-
-function renderTable() { computeWidths(); buildTable(); }
-function goHome() { 
-    document.getElementById('searchInput').value = '';
-    document.getElementById('mainHeader').style.display = 'block'; 
-    document.getElementById('databaseSection').style.display = 'none'; 
-}
-function toggleFilterPanel() { const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
-
-function createFilterCheckboxes() {
-    const c = document.getElementById('filterCheckboxes');
-    c.innerHTML = '';
-    headers.forEach((h, i) => {
-        const lbl = document.createElement('label');
-        lbl.className = 'filter-item';
-        lbl.innerHTML = `<input type="checkbox" checked onchange="toggleCol(${i},this.checked)"> ${h}`;
-        c.appendChild(lbl);
-    });
-}
-
-function toggleCol(i, show) {
-    if (show) { if (!visibleColumns.includes(i)) visibleColumns.push(i); }
-    else { visibleColumns = visibleColumns.filter(x => x !== i); }
-    buildTable();
-}
-
-function resetWidths() { 
-    document.getElementById('searchInput').value = '';
-    renderTable(); 
-}
-
-// Fitur Pencarian & Klik Silang
-document.getElementById('searchInput').addEventListener('input', e => {
-    const q = e.target.value.toLowerCase();
-    if (!q) { itemsToShow = 50; buildTable(); return; }
-    const filtered = rawData.slice(1).filter(row => row.some(cell => String(cell).toLowerCase().includes(q)));
-    let html = '<table><thead>' + document.querySelector('thead').innerHTML + '</thead><tbody>';
-    filtered.forEach((row) => {
-        const originalIndex = rawData.indexOf(row);
-        html += `<tr onclick="openEditForm(${originalIndex})">`;
-        row.forEach((cell, idx) => {
-            const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
-            let val = cell || '';
-            if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image'))) {
-                val = `<img src="${val}" class="img-cell" loading="lazy">`;
-            }
-            html += `<td class="${hide}" style="max-width:${colWidths[idx]}px">${val}</td>`;
-        });
-        html += '</tr>';
-    });
-    html += '</tbody></table>';
-    document.getElementById('tableContainer').innerHTML = html;
-});
-
-document.getElementById('searchInput').addEventListener('search', function() {
-    if (this.value === "") { itemsToShow = 50; buildTable(); }
-});
-
-function initResizers() {
-    document.querySelectorAll('.resizer').forEach(handle => {
-        handle.addEventListener('mousedown', e => {
-            const ci = parseInt(handle.dataset.col);
-            const startX = e.pageX;
-            const th = document.querySelector(`th[data-col="${ci}"]`);
-            const startW = th.offsetWidth;
-            const onMove = ev => {
-                const w = Math.max(30, startW + ev.pageX - startX);
-                colWidths[ci] = w;
-                th.style.width = w + 'px';
-            };
-            const onUp = () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-            };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        });
-    });
 }
 </script>
 </body>
