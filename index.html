@@ -104,53 +104,61 @@
 
 
 
-       /* --- TABLE ULTRA COMPACT --- */
+        /* --- TABLE ULTRA COMPACT --- */
+
         .table-wrapper { 
+
             overflow: auto; 
+
             height: calc(100vh - 45px); 
+
             width: 100%; 
+
+            margin: 0; 
+
+            padding: 0;
+
         }
+
+
 
         table { 
+
             border-collapse: collapse; 
-            width: max-content; /* Tabel hanya selebar konten */
-            min-width: 100%;
-            table-layout: fixed; /* Wajib untuk kontrol lebar */
+
+            width: 100%; 
+
+            table-layout: auto; 
+
         }
+
+
 
         th { 
-            background: #1a1a1a; 
-            color: var(--neon); 
-            padding: 0; /* Padding dipindah ke div didalamnya */
-            position: sticky; 
-            top: 0; 
-            z-index: 10; 
-            border: 1px solid #333;
-            font-size: 9px;
+
+            background: #1a1a1a; color: var(--neon); 
+
+            padding: 3px 5px; 
+
+            position: sticky; top: 0; white-space: nowrap; 
+
+            text-align: left; font-size: 9px; z-index: 10; border: 1px solid #333;
+
         }
 
-        /* Trik agar Header bisa di-resize */
-        .th-resizer {
-            padding: 3px 5px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            resize: horizontal; /* Handle resize muncul di sini */
-            display: block; /* Wajib block agar resize jalan */
-            min-width: 20px; 
-            width: 60px; /* Atur lebar awal di sini */
-        }
+
 
         td { 
-            padding: 2px 4px; 
-            border: 1px solid #222; 
-            white-space: nowrap; 
-            font-size: 9.5px; 
-            color: #ddd; 
-            line-height: 1.1; 
-            overflow: hidden;
-            text-overflow: ellipsis;
+
+            padding: 2px 5px; 
+
+            border: 1px solid #222; white-space: nowrap; 
+
+            font-size: 9.5px; color: #ddd; line-height: 1.1; 
+
         }
+
+
 
         tr:nth-child(even) { background: #050505; }
 
@@ -196,7 +204,7 @@
 
         <h1>FISH APP-V3</h1>
 
-        <div class="subtitle">SISTEM MANAGEMENT INVENTORY IKAN</div>
+        <div class="subtitle">Advanced Management System</div>
 
         
 
@@ -447,14 +455,17 @@
 
 
         function renderTable() {
+
             if (rawData.length === 0) return;
+
             let html = `<table><thead><tr id="headerRow">`;
-            
+
             headers.forEach((h, i) => {
+
                 const hide = visibleColumns.includes(i) ? "" : "hidden-col";
-                // TAMBAHKAN DIV th-resizer DI SINI
-                html += `<th class="${hide}"><div class="th-resizer">${h}</div></th>`;
-            });
+
+                html += `<th class="${hide}">${h}</th>`;
+
             });
 
             html += `</tr></thead><tbody>`;
