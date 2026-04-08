@@ -29,14 +29,26 @@
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
         th { background: #1a1a1a; color: var(--neon); padding: 4px 3px; position: sticky; top: 0; text-align: left; font-size: 9px; z-index: 10; border: 1px solid #2a2a2a; white-space: nowrap; overflow: hidden; }
         .resizer { position: absolute; right: 0; top: 0; width: 4px; height: 100%; cursor: col-resize; z-index: 1; }
-        td { padding: 2px 3px; border: 1px solid #1a1a1a; font-size: 9px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        td { padding: 2px 3px; border: 1px solid #1a1a1a; font-size: 9px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: cell; }
         tr:nth-child(even) { background: #060606; }
         tr:hover { background: #181818; }
-        .img-cell { height: 18px; width: auto; vertical-align: middle; }
-        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon); font-size: 12px; z-index: 1000; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 5px; display: none; border: 1px solid var(--neon); }
+        .img-cell { height: 18px; width: auto; vertical-align: middle; border-radius: 2px; }
+        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon); font-size: 12px; z-index: 1000; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 5px; display: none; border: 1px solid var(--neon); text-align: center; }
         #columnFilterPanel { display: none; position: absolute; top: 40px; left: 10px; background: #111; border: 1px solid var(--neon); z-index: 500; padding: 10px; max-height: 70vh; overflow-y: auto; }
         .filter-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 10px; color: #aaa; }
         .hidden-col { display: none !important; }
+
+        /* Style Modal Edit */
+        #editModal { display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); }
+        .modal-content { background:#111; margin:10% auto; padding:20px; border:1px solid var(--neon); width:90%; max-width:400px; border-radius:8px; box-shadow:0 0 20px rgba(0,210,255,0.3); }
+        .modal-content h3 { color:var(--neon); margin-top:0; font-size:16px; letter-spacing:1px; }
+        .modal-content label { font-size:10px; color:#888; display:block; margin-top:10px; }
+        .modal-content input[type="text"] { width:100%; background:#222; color:#fff; border:1px solid #333; padding:8px; margin-top:5px; box-sizing:border-box; border-radius:4px; outline:none; }
+        .modal-content input[type="text"]:focus { border-color:var(--neon); }
+        .modal-content input[type="file"] { font-size:10px; color:#ccc; margin-top:10px; }
+        .modal-footer { display:flex; gap:10px; margin-top:25px; }
+        .btn-save { flex:1; background:var(--neon); color:#000; padding:10px; border:none; font-weight:bold; cursor:pointer; border-radius:4px; }
+        .btn-cancel { flex:1; background:#333; color:#fff; padding:10px; border:none; cursor:pointer; border-radius:4px; }
     </style>
 </head>
 <body>
@@ -105,18 +117,39 @@
     </div>
 </section>
 
+<div id="editModal">
+    <div class="modal-content">
+        <h3>EDIT DATA</h3>
+        <input type="hidden" id="editRowIndex">
+        
+        <label>COMMON NAME (KOLOM 6)</label>
+        <input type="text" id="editCommonName" placeholder="Masukkan nama ikan...">
+        
+        <label>UPDATE GAMBAR (KOLOM 4)</label>
+        <input type="file" id="imageUpload" accept="image/*">
+        <p style="font-size:8px; color:#666; margin-top:5px;">*Format akan dikonversi ke Base64</p>
+        
+        <div class="modal-footer">
+            <button onclick="saveEdit()" class="btn-save">SIMPAN</button>
+            <button onclick="closeEdit()" class="btn-cancel">BATAL</button>
+        </div>
+    </div>
+</div>
+
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOasisnR1DTEmmsvhLDcNTogQw13f5MkX0U-vUpnHNzWLiSdgO7EisEzM2EgDnYhtP/exec";
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
-let itemsToShow = 80; 
+let itemsToShow = 50; 
+let currentSheetName = "";
 
 async function openSheet(sheetName) {
+    currentSheetName = sheetName;
     document.getElementById('loader').style.display = 'block';
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
     document.getElementById('tableContainer').innerHTML = '';
-    itemsToShow = 80; 
+    itemsToShow = 50; 
     await loadData(sheetName);
 }
 
@@ -171,13 +204,17 @@ function renderRows(start, end) {
     let html = '';
     const limit = Math.min(rawData.length, end);
     for (let r = start; r < limit; r++) {
-        html += '<tr>';
+        // Tambahkan trigger klik untuk edit pada setiap baris
+        html += `<tr onclick="openEditForm(${r})">`;
         rawData[r].forEach((cell, idx) => {
             const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
             let val = cell || '';
-            if (typeof val === 'string' && val.startsWith('http')) {
+            
+            // Deteksi jika cell berisi link gambar atau data Base64
+            if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image'))) {
                 val = `<img src="${val}" class="img-cell" loading="lazy">`;
             }
+            
             html += `<td class="${hide}" style="max-width:${colWidths[idx]}px">${val}</td>`;
         });
         html += '</tr>';
@@ -185,6 +222,69 @@ function renderRows(start, end) {
     return html;
 }
 
+// LOGIKA EDIT & UPLOAD
+function openEditForm(rowIndex) {
+    const data = rawData[rowIndex];
+    document.getElementById('editRowIndex').value = rowIndex;
+    // Ambil Common Name dari kolom 6 (Index 5)
+    document.getElementById('editCommonName').value = data[5] || ""; 
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEdit() {
+    document.getElementById('editModal').style.display = 'none';
+    document.getElementById('imageUpload').value = "";
+}
+
+function saveEdit() {
+    const fileInput = document.getElementById('imageUpload');
+    const rowIndex = document.getElementById('editRowIndex').value;
+    const newName = document.getElementById('editCommonName').value;
+    const file = fileInput.files[0];
+
+    document.getElementById('loader').innerText = "💾 SAVING DATA...";
+    document.getElementById('loader').style.display = "block";
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            updateDataToSheet(rowIndex, newName, e.target.result);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        updateDataToSheet(rowIndex, newName, null);
+    }
+}
+
+async function updateDataToSheet(rowIndex, newName, imgData) {
+    const rowNumber = parseInt(rowIndex) + 1; 
+
+    const payload = {
+        action: 'update',
+        sheet: currentSheetName,
+        row: rowNumber,
+        name: newName,
+        image: imgData
+    };
+
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const res = await response.json();
+        if(res.status === 'success') {
+            alert("Data Berhasil Diperbarui!");
+            location.reload(); 
+        }
+    } catch (e) {
+        alert("Gagal Menghubungkan ke Server.");
+    }
+    document.getElementById('loader').style.display = "none";
+    document.getElementById('loader').innerText = "⚡ LOADING DATA...";
+}
+
+// FUNGSI STANDAR LAINNYA
 function handleScroll() {
     const w = document.getElementById('scrollWrapper');
     if (w.scrollTop + w.clientHeight >= w.scrollHeight - 50) {
