@@ -321,10 +321,36 @@ function resetWidths() { renderTable(); }
 
 document.getElementById('searchInput').addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('#tableBody tr');
-    rows.forEach(tr => {
-        tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
+    
+    // Jika kolom pencarian kosong, render ulang 50 data awal agar ringan
+    if (!q) {
+        itemsToShow = 50; 
+        buildTable();
+        return;
+    }
+    
+    // Cari di SELURUH rawData (termasuk yang belum muncul di layar)
+    const filtered = rawData.slice(1).filter(row => 
+        row.some(cell => String(cell).toLowerCase().includes(q))
+    );
+
+    // Tampilkan hasil pencarian
+    let html = '<table><thead>' + document.querySelector('thead').innerHTML + '</thead><tbody>';
+    filtered.forEach((row) => {
+        const originalIndex = rawData.indexOf(row);
+        html += `<tr onclick="openEditForm(${originalIndex})">`;
+        row.forEach((cell, idx) => {
+            const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
+            let val = cell || '';
+            if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image'))) {
+                val = `<img src="${val}" class="img-cell" loading="lazy">`;
+            }
+            html += `<td class="${hide}" style="max-width:${colWidths[idx]}px">${val}</td>`;
+        });
+        html += '</tr>';
     });
+    html += '</tbody></table>';
+    document.getElementById('tableContainer').innerHTML = html;
 });
 
 function initResizers() {
