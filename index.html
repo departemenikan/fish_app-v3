@@ -22,9 +22,26 @@
         .dropdown-content a:hover { background: var(--neon); color: #000; }
         .dropdown:hover .dropdown-content { display: block; }
 
-        #homePageContent { height: calc(100vh - 105px); width: 100%; display: flex; justify-content: center; align-items: flex-start; background: #000; overflow: hidden; }
-        /* Perbaikan: Memastikan logo tampil proporsional */
-        .home-logo { max-width: 100%; max-height: 100%; object-fit: contain; opacity: 0.9; }
+        /* PENYESUAIAN DISINI: Membuat container gambar full width */
+        #homePageContent { 
+            width: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            background: #000; 
+            overflow: hidden; 
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* PENYESUAIAN DISINI: Membuat gambar memenuhi lebar layar secara responsif */
+        .home-logo { 
+            width: 100%; 
+            max-width: 100%; 
+            height: auto; 
+            display: block;
+            opacity: 0.9; 
+        }
 
         .controls { display: flex; gap: 6px; align-items: center; padding: 6px 10px; background: #080808; border-bottom: 1px solid #222; position: relative; }
         #columnFilterPanel { display: none; position: absolute; top: 40px; left: 85px; background: #111; border: 1px solid var(--neon); padding: 10px; border-radius: 4px; box-shadow: 5px 5px 20px rgba(0,0,0,0.9); z-index: 1000; width: 280px; max-height: 450px; overflow-y: auto; }
@@ -224,20 +241,13 @@ function renderRows(start, end) {
             let val = cell || '';
             let alignClass = '';
             
-            // Pengaturan Alignment
             if (idx >= 9 && idx <= 12) alignClass = 'text-center'; 
             if (idx >= 13 && idx <= 16) alignClass = 'text-right'; 
 
-            // LOGIKA 2 & 3: PEMBERSIHAN URL GAMBAR DAN FORMAT THUMBNAIL
             if (typeof val === 'string' && val.trim() !== "") {
                 const cleanVal = val.trim();
-                // Deteksi link gambar (Google Drive atau Google Content)
                 if (cleanVal.includes('googleusercontent.com') || cleanVal.includes('drive.google.com')) {
-                    // Split berdasarkan spasi untuk membuang teks sampah di belakang URL
                     let cleanUrl = cleanVal.split(/\s+/)[0]; 
-                    
-                    // Jika ini link drive.google.com/uc?id=... kita biarkan, 
-                    // tapi jika ini link direct googleusercontent, pastikan tidak ada parameter dobel
                     val = `<img src="${cleanUrl}" class="img-cell" loading="lazy" onerror="this.src='https://via.placeholder.com/25?text=!'">`;
                 }
             }
@@ -248,9 +258,6 @@ function renderRows(start, end) {
     }
     return html;
 }
-
-// Sisa fungsi lainnya (selectRow, initResize, Modal, Upload, dll) tetap sama sesuai script Anda
-// Namun pastikan fungsi uploadToDrive menggunakan format link yang stabil:
 
 async function uploadToDrive(input, index) {
     const file = input.files[0];
@@ -275,7 +282,6 @@ async function uploadToDrive(input, index) {
             
             const result = await res.json();
             if (result.status === "success") {
-                // Gunakan URL murni dari server tanpa tambahan teks
                 document.getElementById(`field-${index}`).value = result.url;
                 const prev = document.getElementById(`prev-${index}`);
                 if(prev) {
@@ -292,7 +298,6 @@ async function uploadToDrive(input, index) {
     reader.readAsDataURL(file);
 }
 
-// Fungsi pendukung lainnya (handleSave, searchLocal, dll)
 function selectRow(index) {
     if(selectedRowIndex && document.getElementById(`tr-${selectedRowIndex}`)) {
         document.getElementById(`tr-${selectedRowIndex}`).classList.remove('selected-row');
