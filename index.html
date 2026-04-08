@@ -7,111 +7,82 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     
     <style>
-        /* --- PART 1: VARIABEL & BASE STYLE --- */
-        :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; }
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background: var(--bg); color: #efefef; 
-            margin: 0; padding: 0; overflow-x: hidden; 
-        }
+        :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; --green: #00ff88; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #efefef; margin: 0; padding: 0; overflow-x: hidden; }
 
-        /* --- PART 2: HEADER & NAVIGASI --- */
         header { text-align: center; padding: 15px 10px; background: #000; border-bottom: 1px solid #222; }
         h1 { font-size: 26px; letter-spacing: 3px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
         .subtitle { color: var(--neon); font-size: 9px; margin-bottom: 12px; letter-spacing: 1px; }
         
         .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
         .dropdown { position: relative; display: inline-block; }
-        .dropbtn { 
-            background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px; 
-            font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; 
-            cursor: pointer; text-transform: uppercase; font-size: 10px; 
-            display: flex; align-items: center; gap: 5px; 
-        }
-        .dropdown-content { 
-            display: none; position: absolute; background-color: #111; 
-            min-width: 170px; z-index: 100; border: 1px solid var(--neon); 
-            box-shadow: 0 8px 16px rgba(0,0,0,1); 
-        }
+        .dropbtn { background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px; font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer; text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px; }
+        .dropdown-content { display: none; position: absolute; background-color: #111; min-width: 170px; z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1); }
         .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 10px; }
         .dropdown-content a:hover { background: var(--neon); color: #000; }
         .dropdown:hover .dropdown-content { display: block; }
 
-        /* --- PART 3: HOME PAGE --- */
-        #homePageContent {
-            height: calc(100vh - 105px); width: 100%;
-            display: flex; justify-content: center; align-items: flex-start;
-            background: #000; overflow: hidden;
-        }
+        #homePageContent { height: calc(100vh - 105px); width: 100%; display: flex; justify-content: center; align-items: flex-start; background: #000; overflow: hidden; }
         .home-logo { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
 
-        /* --- PART 4: PANEL FILTER --- */
-        .controls { 
-            display: flex; gap: 6px; align-items: center; padding: 6px 10px; 
-            background: #080808; border-bottom: 1px solid #222; 
-            position: relative;
-        }
-
-        #columnFilterPanel { 
-            display: none; 
-            position: absolute; 
-            top: 40px; 
-            left: 85px; 
-            background: #111; 
-            border: 1px solid var(--neon); 
-            padding: 10px; 
-            border-radius: 4px; 
-            box-shadow: 5px 5px 20px rgba(0,0,0,0.9);
-            z-index: 1000; 
-            width: 280px; 
-            max-height: 450px; 
-            overflow-y: auto;
-        }
-
-        .filter-item { 
-            font-size: 11px; color: #ccc; display: flex; align-items: center; 
-            gap: 10px; cursor: pointer; padding: 6px 8px; border-radius: 3px;
-            border-bottom: 1px solid #222;
-        }
+        .controls { display: flex; gap: 6px; align-items: center; padding: 6px 10px; background: #080808; border-bottom: 1px solid #222; position: relative; }
+        #columnFilterPanel { display: none; position: absolute; top: 40px; left: 85px; background: #111; border: 1px solid var(--neon); padding: 10px; border-radius: 4px; box-shadow: 5px 5px 20px rgba(0,0,0,0.9); z-index: 1000; width: 280px; max-height: 450px; overflow-y: auto; }
+        .filter-item { font-size: 11px; color: #ccc; display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 8px; border-radius: 3px; border-bottom: 1px solid #222; }
         .filter-item:hover { background: #222; color: var(--neon); }
         .filter-item input { accent-color: var(--neon); cursor: pointer; }
 
-        /* --- PART 5: DATABASE SECTION & TABLE --- */
         #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
         .btn { padding: 4px 8px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 9px; color: white; text-transform: uppercase; }
         .btn-home { background: var(--accent); }
+        .btn-add { background: var(--green); color: #000; }
+        .btn-edit { background: var(--neon); color: #000; }
         .btn-col { background: #222; border: 1px solid var(--neon); color: var(--neon); }
         .btn-reset { background: #1a1a1a; border: 1px solid #444; color: #888; }
         
-        #searchInput { 
-            width: 180px; padding: 4px 8px; background: #111; color: var(--neon); 
-            border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none;
-        }
+        #searchInput { width: 180px; padding: 4px 8px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
 
-        .table-wrapper { overflow: auto; height: calc(100vh - 90px); width: 100%; position: relative; }
+        .table-wrapper { overflow: auto; height: calc(100vh - 130px); width: 100%; position: relative; }
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
-        th { 
-            background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; 
-            top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; 
-        }
-        td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; }
-        .img-cell { max-height: 20px; width: auto; display: block; margin: 0 auto; border-radius: 2px; }
-        .hidden-col { display: none; }
+        th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
+        td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+        
+        .resizer { position: absolute; right: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 11; }
+        .resizer:hover { background: var(--neon); }
+        tr.selected-row { background: rgba(0, 210, 255, 0.15) !important; }
 
-        /* ALIGNMENT CLASSES */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; backdrop-filter: blur(4px); }
+        .modal-content { background: #111; border: 1px solid var(--neon); width: 90%; max-width: 450px; margin: 20px auto; padding: 25px; border-radius: 8px; max-height: 85vh; overflow-y: auto; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 10px; color: var(--neon); margin-bottom: 4px; text-transform: uppercase; }
+        .form-group input { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; font-size: 11px; box-sizing: border-box; }
+        .img-preview { max-width: 150px; margin-top: 5px; border: 1px solid var(--neon); display: none; }
+
+        .img-cell { max-height: 25px; width: auto; display: block; margin: 0 auto; border-radius: 2px; }
+        .hidden-col { display: none; }
         .text-center { text-align: center !important; }
         .text-right { text-align: right !important; }
-
-        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon); z-index: 2000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
+        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
     </style>
 </head>
 <body>
+
+<div id="loader">⚡ LOADING...</div>
+
+<div id="dataModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle" style="color:var(--neon); margin:0 0 15px 0; text-align:center; font-size: 14px;">FORM DATA</h3>
+        <form id="dynamicForm"></form>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn btn-add" style="flex:2; padding: 10px;" onclick="handleSave()">SIMPAN</button>
+            <button class="btn btn-home" style="flex:1" onclick="closeModal()">BATAL</button>
+        </div>
+    </div>
+</div>
 
 <header id="mainHeader">
     <h1>FISH APP-V3</h1>
     <div class="subtitle">Sistem Management Inventory Ikan</div>
     <div class="nav-container">
-        <!-- MENU 1: DATABASE -->
         <div class="dropdown">
             <button class="dropbtn">📁 DATABASE ▾</button>
             <div class="dropdown-content">
@@ -168,18 +139,16 @@
 <section id="databaseSection">
     <div class="controls">
         <button onclick="goHome()" class="btn btn-home">⬅ KEMBALI</button>
+        <button onclick="openModal('add')" class="btn btn-add">+ TAMBAH</button>
+        <button onclick="openModal('edit')" class="btn btn-edit">✎ EDIT</button>
         <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol">⚙ KOLOM</button>
-        
         <div id="columnFilterPanel">
             <div id="filterCheckboxes"></div>
         </div>
-
         <button onclick="resetWidths()" class="btn btn-reset">↺ RESET</button>
         <span style="flex: 1;"></span>
-        <input type="search" id="searchInput" placeholder="Cari data...">
+        <input type="search" id="searchInput" onkeyup="searchLocal()" placeholder="Cari data...">
     </div>
-
-    <div id="loader">⚡ LOADING DATA...</div>
 
     <div class="table-wrapper" id="scrollWrapper" onscroll="handleScroll()">
         <div id="tableContainer"></div>
@@ -187,15 +156,18 @@
 </section>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOasisnR1DTEmmsvhLDcNTogQw13f5MkX0U-vUpnHNzWLiSdgO7EisEzM2EgDnYhtP/exec";
+// PASTI KAN URL INI BENAR
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw09nwF6cbpNw0IZMlM_3IElAIV6tjXzoV33DEmGtkKgk4q-QwT7TFf4l9kmI1TkRb_/exec";
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
 let itemsToShow = 50;
+let currentSheet = "";
+let selectedRowIndex = null;
 
 async function openSheet(sheetName) {
-    // FIX: Bersihkan kontainer agar data lama hilang sebelum loading data baru
+    currentSheet = sheetName;
+    selectedRowIndex = null;
     document.getElementById('tableContainer').innerHTML = '';
-    
     document.getElementById('loader').style.display = 'block';
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('homePageContent').style.display = 'none'; 
@@ -217,11 +189,214 @@ async function loadData(sheet) {
             rawData = result.data;
             headers = rawData[0];
             visibleColumns = headers.map((_, i) => i);
+            computeWidths();
             createFilterCheckboxes();
-            renderTable();
+            buildTable();
         }
     } catch(e) { console.error(e); }
     document.getElementById('loader').style.display = 'none';
+}
+
+function computeWidths() {
+    colWidths = headers.map(h => Math.min(Math.max(h.length * 10, 80), 200));
+}
+
+function buildTable() {
+    let html = '<table><thead><tr><th style="width:40px">SEL</th>';
+    headers.forEach((h, i) => {
+        const hide = visibleColumns.includes(i) ? '' : 'hidden-col';
+        html += `<th class="${hide}" style="width:${colWidths[i]}px" id="th-${i}">
+                    ${h}<div class="resizer" onmousedown="initResize(event, ${i})"></div>
+                 </th>`;
+    });
+    html += '</tr></thead><tbody id="tableBody">';
+    html += renderRows(1, itemsToShow);
+    html += '</tbody></table>';
+    document.getElementById('tableContainer').innerHTML = html;
+}
+
+function renderRows(start, end) {
+    let html = '';
+    const limit = Math.min(rawData.length, end);
+    for (let r = start; r < limit; r++) {
+        html += `<tr id="tr-${r}" onclick="selectRow(${r})">
+                    <td class="text-center"><input type="radio" name="rowSelect" id="rad-${r}"></td>`;
+        rawData[r].forEach((cell, idx) => {
+            const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
+            let val = cell || '';
+            let alignClass = '';
+            
+            // Pengaturan Alignment Berdasarkan Kolom
+            if (idx >= 9 && idx <= 12) alignClass = 'text-center'; 
+            if (idx >= 13 && idx <= 16) alignClass = 'text-right'; 
+
+            // PERBAIKAN FINAL LOGIKA GAMBAR
+            if (typeof val === 'string' && val.trim() !== "") {
+                const cleanVal = val.trim();
+                // Deteksi link gambar (drive atau googleusercontent)
+                if (cleanVal.includes('googleusercontent.com') || cleanVal.includes('drive.google.com')) {
+                    const cleanUrl = cleanVal.split(' ')[0]; // Ambil URL murni tanpa teks sampah
+                    val = `<img src="${cleanUrl}" class="img-cell" loading="lazy" onerror="this.src='https://via.placeholder.com/25?text=!'">`;
+                }
+            }
+            
+            html += `<td class="${hide} ${alignClass}" style="width:${colWidths[idx]}px">${val}</td>`;
+        });
+        html += '</tr>';
+    }
+    return html;
+}
+
+function selectRow(index) {
+    if(selectedRowIndex && document.getElementById(`tr-${selectedRowIndex}`)) {
+        document.getElementById(`tr-${selectedRowIndex}`).classList.remove('selected-row');
+    }
+    selectedRowIndex = index;
+    document.getElementById(`tr-${index}`).classList.add('selected-row');
+    document.getElementById(`rad-${index}`).checked = true;
+}
+
+function initResize(e, i) {
+    e.stopPropagation();
+    const startX = e.pageX;
+    const startWidth = colWidths[i];
+    
+    const doResize = (moveEvent) => {
+        const newWidth = Math.max(20, startWidth + (moveEvent.pageX - startX));
+        colWidths[i] = newWidth;
+        document.getElementById(`th-${i}`).style.width = newWidth + 'px';
+        const rows = document.querySelectorAll(`#tableBody tr td:nth-child(${i+2})`);
+        rows.forEach(td => td.style.width = newWidth + 'px');
+    };
+
+    const stopResize = () => {
+        document.removeEventListener('mousemove', doResize);
+        document.removeEventListener('mouseup', stopResize);
+    };
+
+    document.addEventListener('mousemove', doResize);
+    document.addEventListener('mouseup', stopResize);
+}
+
+function openModal(mode) {
+    if (mode === 'edit' && !selectedRowIndex) {
+        alert("Pilih data pada tabel terlebih dahulu!");
+        return;
+    }
+
+    const form = document.getElementById('dynamicForm');
+    form.innerHTML = '';
+    document.getElementById('modalTitle').innerText = mode === 'add' ? `TAMBAH : ${currentSheet}` : `EDIT : ${currentSheet}`;
+    
+    headers.forEach((h, i) => {
+        const val = mode === 'edit' ? rawData[selectedRowIndex][i] : '';
+        const isImg = h.toLowerCase().includes('image') || h.toLowerCase().includes('foto');
+        
+        let inputHtml = `
+            <div class="form-group">
+                <label>${h}</label>
+                <input type="${isImg ? 'hidden' : 'text'}" id="field-${i}" value="${val}">
+                ${isImg ? `
+                    <input type="file" accept="image/*" onchange="uploadToDrive(this, ${i})">
+                    <img id="prev-${i}" src="${val}" class="img-preview" style="display:${val ? 'block' : 'none'}" onerror="this.style.display='none'">
+                ` : ''}
+            </div>`;
+        form.innerHTML += inputHtml;
+    });
+
+    document.getElementById('dataModal').style.display = 'block';
+}
+
+function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
+
+async function uploadToDrive(input, index) {
+    const file = input.files[0];
+    if (!file) return;
+
+    document.getElementById('loader').innerText = "⚡ MENGUNGGAH KE DRIVE...";
+    document.getElementById('loader').style.display = 'block';
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "upload",
+                    fileData: base64,
+                    fileName: "IMG_" + Date.now() + "_" + file.name,
+                    fileMime: file.type
+                })
+            });
+            
+            const result = await res.json();
+            
+            if (result.status === "success") {
+                document.getElementById(`field-${index}`).value = result.url;
+                const prev = document.getElementById(`prev-${index}`);
+                if(prev) {
+                    prev.src = result.url;
+                    prev.style.display = 'block';
+                }
+            }
+        } catch (err) {
+            alert("Upload Gagal!");
+        } finally {
+            document.getElementById('loader').style.display = 'none';
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+async function handleSave() {
+    const formFields = headers.map((_, i) => document.getElementById(`field-${i}`).value);
+    const mode = document.getElementById('modalTitle').innerText.includes('TAMBAH') ? 'add' : 'edit';
+    await updateDataToSheet(selectedRowIndex, formFields, mode);
+}
+
+async function updateDataToSheet(rowIndex, formFields, mode) {
+    document.getElementById('loader').innerText = "⚡ MEMPROSES DATA...";
+    document.getElementById('loader').style.display = "block";
+
+    const payload = { 
+        action: 'save', 
+        sheet: currentSheet, 
+        rowIndex: rowIndex,
+        data: formFields 
+    };
+
+    try {
+        const response = await fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            body: JSON.stringify(payload) 
+        });
+        const res = await response.json();
+        
+        if(res.status === 'success') {
+            if (mode === 'edit') {
+                rawData[rowIndex] = formFields;
+            } else {
+                rawData.push(formFields);
+            }
+            closeModal();
+            buildTable(); 
+            alert("Data Berhasil Disimpan!");
+        } else {
+            alert("Gagal menyimpan: " + res.message);
+        }
+    } catch (e) {
+        alert("Gagal Menghubungkan ke Server.");
+    }
+    document.getElementById('loader').style.display = "none";
+}
+
+function searchLocal() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#tableBody tr');
+    rows.forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
 }
 
 function createFilterCheckboxes() {
@@ -247,64 +422,11 @@ function toggleFilterPanel(event) {
     p.style.display = p.style.display === 'block' ? 'none' : 'block'; 
 }
 
-window.onclick = function(e) {
-    const panel = document.getElementById('columnFilterPanel');
-    const btn = document.getElementById('btnFilterCol');
-    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn) {
-        panel.style.display = 'none';
-    }
-}
-
-function computeWidths() {
-    colWidths = headers.map(h => Math.min(Math.max(h.length * 8, 70), 200));
-}
-
-function buildTable() {
-    let html = '<table><thead><tr>';
-    headers.forEach((h, i) => {
-        const hide = visibleColumns.includes(i) ? '' : 'hidden-col';
-        html += `<th class="${hide}" style="width:${colWidths[i]}px">${h}</th>`;
-    });
-    html += '</tr></thead><tbody id="tableBody">';
-    html += renderRows(1, itemsToShow);
-    html += '</tbody></table>';
-    document.getElementById('tableContainer').innerHTML = html;
-}
-
-function renderRows(start, end) {
-    let html = '';
-    const limit = Math.min(rawData.length, end);
-    for (let r = start; r < limit; r++) {
-        html += `<tr>`;
-        rawData[r].forEach((cell, idx) => {
-            const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
-            let val = cell || '';
-            
-            // LOGIKA PERATAAN TEXT
-            let alignClass = '';
-            if (idx >= 9 && idx <= 12) alignClass = 'text-center'; // Kolom 10-13 (index 9-12)
-            if (idx >= 13 && idx <= 16) alignClass = 'text-right'; // Kolom 14-17 (index 13-16)
-
-            if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image'))) {
-                val = `<img src="${val}" class="img-cell" loading="lazy">`;
-            }
-            html += `<td class="${hide} ${alignClass}">${val}</td>`;
-        });
-        html += '</tr>';
-    }
-    return html;
-}
-
-function renderTable() { 
-    itemsToShow = 50;
-    computeWidths(); 
-    buildTable(); 
-}
-
 function resetWidths() { 
     visibleColumns = headers.map((_, i) => i);
+    computeWidths();
     createFilterCheckboxes();
-    renderTable(); 
+    buildTable(); 
 }
 
 function handleScroll() {
@@ -315,6 +437,14 @@ function handleScroll() {
             itemsToShow += 50;
             document.getElementById('tableBody').insertAdjacentHTML('beforeend', renderRows(start, itemsToShow));
         }
+    }
+}
+
+window.onclick = function(e) {
+    const panel = document.getElementById('columnFilterPanel');
+    const btn = document.getElementById('btnFilterCol');
+    if (panel && panel.style.display === 'block' && !panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
     }
 }
 </script>
