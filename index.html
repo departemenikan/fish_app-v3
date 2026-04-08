@@ -104,47 +104,53 @@
 
 
 
-        /* --- TABLE ULTRA COMPACT --- */
+       /* --- TABLE ULTRA COMPACT --- */
         .table-wrapper { 
             overflow: auto; 
             height: calc(100vh - 45px); 
             width: 100%; 
-            margin: 0; 
-            padding: 0;
         }
 
         table { 
             border-collapse: collapse; 
-            width: max-content; /* AGAR TABEL TIDAK DIPAKSA MELEBAR KE KANAN */
+            width: max-content; /* Tabel hanya selebar konten */
             min-width: 100%;
-            table-layout: fixed; /* WAJIB AGAR KOLOM BISA DI-RESIZE */
+            table-layout: fixed; /* Wajib untuk kontrol lebar */
         }
 
         th { 
-            background: #1a1a1a; color: var(--neon); 
-            padding: 3px 5px; 
-            position: sticky; top: 0; 
-            white-space: nowrap; 
-            text-align: left; font-size: 9px; z-index: 10; 
+            background: #1a1a1a; 
+            color: var(--neon); 
+            padding: 0; /* Padding dipindah ke div didalamnya */
+            position: sticky; 
+            top: 0; 
+            z-index: 10; 
             border: 1px solid #333;
+            font-size: 9px;
+        }
+
+        /* Trik agar Header bisa di-resize */
+        .th-resizer {
+            padding: 3px 5px;
             overflow: hidden;
+            white-space: nowrap;
             text-overflow: ellipsis;
-            resize: horizontal; /* MENGAKTIFKAN FITUR RESIZE MANUAL */
-            overflow: auto; 
-            min-width: 20px; /* JARAK TERPENDEK */
-            width: 20px; /* LEBAR DEFAULT AWAL */
+            resize: horizontal; /* Handle resize muncul di sini */
+            display: block; /* Wajib block agar resize jalan */
+            min-width: 20px; 
+            width: 60px; /* Atur lebar awal di sini */
         }
 
         td { 
-            padding: 2px 4px; /* DIKECILKAN DARI 5px KE 4px AGAR LEBIH RAPAT */
+            padding: 2px 4px; 
             border: 1px solid #222; 
             white-space: nowrap; 
-            font-size: 9.5px; color: #ddd; 
+            font-size: 9.5px; 
+            color: #ddd; 
             line-height: 1.1; 
             overflow: hidden;
-            text-overflow: ellipsis; /* POTONG TEKS JIKA KOLOM DISREMPITKAN */
+            text-overflow: ellipsis;
         }
-
 
         tr:nth-child(even) { background: #050505; }
 
@@ -441,17 +447,14 @@
 
 
         function renderTable() {
-
             if (rawData.length === 0) return;
-
             let html = `<table><thead><tr id="headerRow">`;
-
+            
             headers.forEach((h, i) => {
-
                 const hide = visibleColumns.includes(i) ? "" : "hidden-col";
-
-                html += `<th class="${hide}">${h}</th>`;
-
+                // TAMBAHKAN DIV th-resizer DI SINI
+                html += `<th class="${hide}"><div class="th-resizer">${h}</div></th>`;
+            });
             });
 
             html += `</tr></thead><tbody>`;
