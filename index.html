@@ -309,8 +309,20 @@ function createFilterCheckboxes() {
 }
 
 function toggleCol(i, show) {
-    if (show) { if (!visibleColumns.includes(i)) visibleColumns.push(i); }
-    else { visibleColumns = visibleColumns.filter(x => x !== i); }
+    // Pastikan i adalah integer
+    const index = parseInt(i);
+    
+    if (show) {
+        if (!visibleColumns.includes(index)) {
+            visibleColumns.push(index);
+        }
+    } else {
+        visibleColumns = visibleColumns.filter(x => x !== index);
+    }
+    
+    // Urutkan kembali agar buildTable tidak bingung dengan urutan kolom
+    visibleColumns.sort((a, b) => a - b);
+    
     buildTable();
 }
 
