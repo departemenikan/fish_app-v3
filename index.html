@@ -301,11 +301,11 @@ async function updateDataToSheet(rowIndex, newName, imgData) {
         
         closeEdit();
         buildTable();
-        alert("Permintaan dikirim! Silakan cek tabel dalam beberapa detik.");
+        alert("Data berhasil di Update. Silakan cek tabel..!");
 
     } catch (e) {
         console.error("Error Detail:", e);
-        alert("Gagal Terhubung. Pastikan Deployment Apps Script sudah 'Anyone'.");
+        alert("Gagal terhubung server. Pastikan Deployment Apps Script sudah 'Anyone'.");
     }
     document.getElementById('loader').style.display = "none";
 }
