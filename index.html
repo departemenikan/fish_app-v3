@@ -22,26 +22,8 @@
         .dropdown-content a:hover { background: var(--neon); color: #000; }
         .dropdown:hover .dropdown-content { display: block; }
 
-        /* PENYESUAIAN DISINI: Membuat container gambar full width */
-        #homePageContent { 
-            width: 100%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
-            background: #000; 
-            overflow: hidden; 
-            padding: 0;
-            margin: 0;
-        }
-        
-        /* PENYESUAIAN DISINI: Membuat gambar memenuhi lebar layar secara responsif */
-        .home-logo { 
-            width: 100%; 
-            max-width: 100%; 
-            height: auto; 
-            display: block;
-            opacity: 0.9; 
-        }
+        #homePageContent { height: calc(100vh - 105px); width: 100%; display: flex; justify-content: center; align-items: flex-start; background: #000; overflow: hidden; }
+        .home-logo { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
 
         .controls { display: flex; gap: 6px; align-items: center; padding: 6px 10px; background: #080808; border-bottom: 1px solid #222; position: relative; }
         #columnFilterPanel { display: none; position: absolute; top: 40px; left: 85px; background: #111; border: 1px solid var(--neon); padding: 10px; border-radius: 4px; box-shadow: 5px 5px 20px rgba(0,0,0,0.9); z-index: 1000; width: 280px; max-height: 450px; overflow-y: auto; }
@@ -148,7 +130,7 @@
 </header>
 
 <section id="homePageContent">
-    <img src="Home_Image.png" alt="Fish App Logo" class="home-logo" onerror="this.src='https://via.placeholder.com/800x400?text=FISH+APP+LOGO+MISSING'">
+    <img src="Home_Image.png" alt="Fish App Logo" class="home-logo">
 </section>
 
 <section id="databaseSection">
@@ -181,7 +163,6 @@ let selectedRowIndex = null;
 async function openSheet(sheetName) {
     currentSheet = sheetName;
     selectedRowIndex = null;
-    itemsToShow = 50; // Reset pagination
     document.getElementById('tableContainer').innerHTML = '';
     document.getElementById('loader').style.display = 'block';
     document.getElementById('mainHeader').style.display = 'none';
@@ -230,6 +211,7 @@ function buildTable() {
     document.getElementById('tableContainer').innerHTML = html;
 }
 
+// UPDATE: Perataan Kolom Q,R,S,T (Kiri) & U,V (Tengah)
 function renderRows(start, end) {
     let html = '';
     const limit = Math.min(rawData.length, end);
@@ -241,17 +223,19 @@ function renderRows(start, end) {
             let val = cell || '';
             let alignClass = '';
             
+            if (idx === 0) alignClass = 'text-center'; 
             if (idx >= 9 && idx <= 12) alignClass = 'text-center'; 
-            if (idx >= 13 && idx <= 16) alignClass = 'text-right'; 
+            if (idx >= 13 && idx <= 15) alignClass = 'text-right'; 
+            if (idx >= 16 && idx <= 19) alignClass = '';            // Q-T: Rata Kiri
+            if (idx >= 20 && idx <= 21) alignClass = 'text-center'; // U-V: Rata Tengah
 
             if (typeof val === 'string' && val.trim() !== "") {
                 const cleanVal = val.trim();
                 if (cleanVal.includes('googleusercontent.com') || cleanVal.includes('drive.google.com')) {
-                    let cleanUrl = cleanVal.split(/\s+/)[0]; 
+                    const cleanUrl = cleanVal.split(' ')[0]; 
                     val = `<img src="${cleanUrl}" class="img-cell" loading="lazy" onerror="this.src='https://via.placeholder.com/25?text=!'">`;
                 }
             }
-            
             html += `<td class="${hide} ${alignClass}" style="width:${colWidths[idx]}px">${val}</td>`;
         });
         html += '</tr>';
@@ -259,11 +243,84 @@ function renderRows(start, end) {
     return html;
 }
 
+function selectRow(index) {
+    if(selectedRowIndex && document.getElementById(`tr-${selectedRowIndex}`)) {
+        document.getElementById(`tr-${selectedRowIndex}`).classList.remove('selected-row');
+    }
+    selectedRowIndex = index;
+    document.getElementById(`tr-${index}`).classList.add('selected-row');
+    document.getElementById(`rad-${index}`).checked = true;
+}
+
+function initResize(e, i) {
+    e.stopPropagation();
+    const startX = e.pageX;
+    const startWidth = colWidths[i];
+    const doResize = (m) => {
+        const nW = Math.max(20, startWidth + (m.pageX - startX));
+        colWidths[i] = nW;
+        document.getElementById(`th-${i}`).style.width = nW + 'px';
+        document.querySelectorAll(`#tableBody tr td:nth-child(${i+2})`).forEach(td => td.style.width = nW + 'px');
+    };
+    const stop = () => { document.removeEventListener('mousemove', doResize); document.removeEventListener('mouseup', stop); };
+    document.addEventListener('mousemove', doResize);
+    document.addEventListener('mouseup', stop);
+}
+
+// UPDATE: openModal membawa data-row-index untuk kebutuhan Filename Gambar
+function openModal(mode) {
+    if (mode === 'edit' && !selectedRowIndex) {
+        alert("Pilih data pada tabel terlebih dahulu!");
+        return;
+    }
+    const form = document.getElementById('dynamicForm');
+    form.innerHTML = '';
+    document.getElementById('modalTitle').innerText = mode === 'add' ? `TAMBAH : ${currentSheet}` : `EDIT : ${currentSheet}`;
+    
+    headers.forEach((h, i) => {
+        const val = mode === 'edit' ? rawData[selectedRowIndex][i] : '';
+        const isImg = h.toLowerCase().includes('image') || h.toLowerCase().includes('foto');
+        let inputHtml = `
+            <div class="form-group">
+                <label>${h}</label>
+                <input type="${isImg ? 'hidden' : 'text'}" id="field-${i}" value="${val}">
+                ${isImg ? `
+                    <input type="file" accept="image/*" data-row-index="${selectedRowIndex}" onchange="uploadToDrive(this, ${i})">
+                    <img id="prev-${i}" src="${val}" class="img-preview" style="display:${val ? 'block' : 'none'}" onerror="this.style.display='none'">
+                ` : ''}
+            </div>`;
+        form.innerHTML += inputHtml;
+    });
+    document.getElementById('dataModal').style.display = 'block';
+}
+
+function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
+
+// UPDATE: uploadToDrive menggunakan Kolom T (Index 19) sebagai Filename Murni (Overwrite)
 async function uploadToDrive(input, index) {
     const file = input.files[0];
     if (!file) return;
 
-    document.getElementById('loader').innerText = "⚡ MENGUNGGAH KE DRIVE...";
+    const rowIndex = input.getAttribute('data-row-index');
+    let namaLokal = "";
+    if (rowIndex !== "null" && rawData[rowIndex]) {
+        namaLokal = rawData[rowIndex][19]; 
+    } else {
+        const fieldT = document.getElementById('field-19');
+        namaLokal = fieldT ? fieldT.value : "";
+    }
+
+    if (!namaLokal || namaLokal.trim() === "") {
+        alert("Nama Lokal (Kolom T) kosong! Isi Nama Lokal dahulu agar filename sesuai.");
+        input.value = "";
+        return;
+    }
+
+    const cleanFileName = namaLokal.trim().replace(/[/\\?%*:|"<>]/g, '-');
+    const ext = file.name.split('.').pop();
+    const finalName = `${cleanFileName}.${ext}`;
+
+    document.getElementById('loader').innerText = "⚡ PROSES GAMBAR: " + finalName;
     document.getElementById('loader').style.display = 'block';
 
     const reader = new FileReader();
@@ -275,86 +332,24 @@ async function uploadToDrive(input, index) {
                 body: JSON.stringify({
                     action: "upload",
                     fileData: base64,
-                    fileName: "IMG_" + Date.now() + "_" + file.name,
+                    fileName: finalName,
                     fileMime: file.type
                 })
             });
-            
             const result = await res.json();
             if (result.status === "success") {
-                document.getElementById(`field-${index}`).value = result.url;
-                const prev = document.getElementById(`prev-${index}`);
-                if(prev) {
-                    prev.src = result.url;
-                    prev.style.display = 'block';
+                const cacheUrl = result.url + "?t=" + Date.now();
+                document.getElementById(`field-${index}`).value = cacheUrl;
+                if(document.getElementById(`prev-${index}`)) {
+                    document.getElementById(`prev-${index}`).src = cacheUrl;
+                    document.getElementById(`prev-${index}`).style.display = 'block';
                 }
             }
-        } catch (err) {
-            alert("Upload Gagal!");
-        } finally {
-            document.getElementById('loader').style.display = 'none';
-        }
+        } catch (err) { alert("Upload Gagal!"); }
+        finally { document.getElementById('loader').style.display = 'none'; }
     };
     reader.readAsDataURL(file);
 }
-
-function selectRow(index) {
-    if(selectedRowIndex && document.getElementById(`tr-${selectedRowIndex}`)) {
-        document.getElementById(`tr-${selectedRowIndex}`).classList.remove('selected-row');
-    }
-    selectedRowIndex = index;
-    const row = document.getElementById(`tr-${index}`);
-    if(row) {
-        row.classList.add('selected-row');
-        document.getElementById(`rad-${index}`).checked = true;
-    }
-}
-
-function initResize(e, i) {
-    e.stopPropagation();
-    const startX = e.pageX;
-    const startWidth = colWidths[i];
-    const doResize = (moveEvent) => {
-        const newWidth = Math.max(20, startWidth + (moveEvent.pageX - startX));
-        colWidths[i] = newWidth;
-        document.getElementById(`th-${i}`).style.width = newWidth + 'px';
-        const rows = document.querySelectorAll(`#tableBody tr td:nth-child(${i+2})`);
-        rows.forEach(td => td.style.width = newWidth + 'px');
-    };
-    const stopResize = () => {
-        document.removeEventListener('mousemove', doResize);
-        document.removeEventListener('mouseup', stopResize);
-    };
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stopResize);
-}
-
-function openModal(mode) {
-    if (mode === 'edit' && !selectedRowIndex) {
-        alert("Pilih data pada tabel terlebih dahulu!");
-        return;
-    }
-    const form = document.getElementById('dynamicForm');
-    form.innerHTML = '';
-    document.getElementById('modalTitle').innerText = mode === 'add' ? `TAMBAH : ${currentSheet}` : `EDIT : ${currentSheet}`;
-    headers.forEach((h, i) => {
-        const val = mode === 'edit' ? rawData[selectedRowIndex][i] : '';
-        const isImg = h.toLowerCase().includes('image') || h.toLowerCase().includes('foto');
-        let inputHtml = `
-            <div class="form-group">
-                <label>${h}</label>
-                <input type="${isImg ? 'hidden' : 'text'}" id="field-${i}" value="${val}">
-                ${isImg ? `
-                    <input type="file" accept="image/*" onchange="uploadToDrive(this, ${i})">
-                    <img id="prev-${i}" src="${val}" class="img-preview" style="display:${val ? 'block' : 'none'}" onerror="this.style.display='none'">
-                ` : ''}
-            </div>`;
-        form.innerHTML += inputHtml;
-    });
-    document.getElementById('dataModal').style.display = 'block';
-}
-
-function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
 
 async function handleSave() {
     const formFields = headers.map((_, i) => document.getElementById(`field-${i}`).value);
@@ -375,15 +370,16 @@ async function updateDataToSheet(rowIndex, formFields, mode) {
             closeModal();
             buildTable(); 
             alert("Data Berhasil Disimpan!");
-        }
-    } catch (e) { alert("Gagal Menghubungkan ke Server."); }
+        } else { alert("Gagal: " + res.message); }
+    } catch (e) { alert("Gagal Koneksi."); }
     document.getElementById('loader').style.display = "none";
 }
 
 function searchLocal() {
     const q = document.getElementById('searchInput').value.toLowerCase();
-    const rows = document.querySelectorAll('#tableBody tr');
-    rows.forEach(r => { r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none'; });
+    document.querySelectorAll('#tableBody tr').forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+    });
 }
 
 function createFilterCheckboxes() {
