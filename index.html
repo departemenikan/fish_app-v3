@@ -3,100 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISH APP-V3 | Ultra Compact & Full Width</title>
+    <title>FISH APP-V3 | High Performance</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; }
-
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: var(--bg); color: #efefef;
-            margin: 0; padding: 0; overflow-x: hidden;
-        }
-
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #efefef; margin: 0; padding: 0; overflow: hidden; }
         header { text-align: center; padding: 15px 10px; background: #000; border-bottom: 1px solid #222; }
         h1 { font-size: 26px; letter-spacing: 3px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
         .subtitle { color: var(--neon); font-size: 9px; margin-bottom: 12px; letter-spacing: 1px; }
-
         .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
         .dropdown { position: relative; display: inline-block; }
-        .dropbtn {
-            background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px;
-            font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer;
-            text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px;
-        }
-        .dropdown-content {
-            display: none; position: absolute; background-color: #111; min-width: 160px;
-            z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1);
-        }
+        .dropbtn { background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px; font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer; text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px; }
+        .dropdown-content { display: none; position: absolute; background-color: #111; min-width: 160px; z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1); }
         .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 10px; }
         .dropdown-content a:hover { background: var(--neon); color: #000; }
         .dropdown:hover .dropdown-content { display: block; }
-
-        #databaseSection { display: none; background: #000; min-height: 100vh; width: 100%; margin: 0; padding: 0; }
-
-        .controls {
-            display: flex; gap: 6px; align-items: center;
-            padding: 4px 8px; background: #080808; border-bottom: 1px solid #222;
-        }
+        #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
+        .controls { display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: #080808; border-bottom: 1px solid #222; }
         .btn { padding: 3px 7px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 9px; color: white; }
         .btn-home { background: var(--accent); }
         .btn-col  { background: #222; border: 1px solid var(--neon); color: var(--neon); }
         .btn-reset{ background: #1a1a1a; border: 1px solid #444; color: #888; }
-
         #searchInput { flex: 1; padding: 3px 6px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 2px; font-size: 10px; outline: none; }
-
-        .table-wrapper { overflow: auto; height: calc(100vh - 34px); width: 100%; }
-
-        table {
-            border-collapse: collapse;
-            table-layout: fixed;
-            width: max-content;
-        }
-
-        th {
-            background: #1a1a1a; color: var(--neon);
-            padding: 2px 3px;
-            position: sticky; top: 0;
-            text-align: left; font-size: 9px;
-            z-index: 10; border: 1px solid #2a2a2a;
-            white-space: nowrap; overflow: hidden;
-            user-select: none;
-        }
-
-        th .col-label { display: block; overflow: hidden; text-overflow: ellipsis; }
-
-        th .resizer {
-            position: absolute; right: 0; top: 0;
-            width: 4px; height: 100%;
-            cursor: col-resize; z-index: 1;
-        }
-        th .resizer:hover, th .resizer.dragging { background: var(--neon); opacity: 0.7; }
-
-        td {
-            padding: 1px 3px;
-            border: 1px solid #1a1a1a;
-            font-size: 9px; color: #ccc; line-height: 1.2;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
+        .table-wrapper { overflow: auto; height: calc(100vh - 80px); width: 100%; position: relative; }
+        table { border-collapse: collapse; table-layout: fixed; width: max-content; }
+        th { background: #1a1a1a; color: var(--neon); padding: 4px 3px; position: sticky; top: 0; text-align: left; font-size: 9px; z-index: 10; border: 1px solid #2a2a2a; white-space: nowrap; overflow: hidden; }
+        .resizer { position: absolute; right: 0; top: 0; width: 4px; height: 100%; cursor: col-resize; z-index: 1; }
+        td { padding: 2px 3px; border: 1px solid #1a1a1a; font-size: 9px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         tr:nth-child(even) { background: #060606; }
         tr:hover { background: #181818; }
-
-        .img-cell { height: 16px; vertical-align: middle; }
-        .hidden-col { display: none; }
-
-        #loader { text-align: center; color: var(--neon); padding: 40px; display: none; font-size: 11px; }
-
-        #columnFilterPanel {
-            display: none; position: absolute; top: 36px; left: 8px;
-            background: #111; border: 1px solid var(--neon); z-index: 500;
-            padding: 8px; max-height: 280px; overflow-y: auto;
-            box-shadow: 0 0 16px rgba(0,0,0,0.9);
-        }
-        .filter-item { display: block; margin-bottom: 4px; font-size: 10px; color: #aaa; cursor: pointer; }
-
-        body.resizing, body.resizing * { cursor: col-resize !important; user-select: none !important; }
+        .img-cell { height: 18px; width: auto; vertical-align: middle; }
+        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--neon); font-size: 12px; z-index: 1000; background: rgba(0,0,0,0.9); padding: 20px; border-radius: 5px; display: none; border: 1px solid var(--neon); }
+        #columnFilterPanel { display: none; position: absolute; top: 40px; left: 10px; background: #111; border: 1px solid var(--neon); z-index: 500; padding: 10px; max-height: 70vh; overflow-y: auto; }
+        .filter-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 10px; color: #aaa; }
+        .hidden-col { display: none !important; }
     </style>
 </head>
 <body>
@@ -160,129 +100,27 @@
     </div>
     <div id="columnFilterPanel"><div id="filterCheckboxes"></div></div>
     <div id="loader">⚡ LOADING DATA...</div>
-    <div class="table-wrapper" id="tableContainer"></div>
+    <div class="table-wrapper" id="scrollWrapper" onscroll="handleScroll()">
+        <div id="tableContainer"></div>
+    </div>
 </section>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOasisnR1DTEmmsvhLDcNTogQw13f5MkX0U-vUpnHNzWLiSdgO7EisEzM2EgDnYhtP/exec";
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
-
-function isLongText(str) {
-    return str.includes('/') || str.includes('\\') || str.startsWith('http') || str.length > 40;
-}
-
-function computeWidths() {
-    const cv = document.createElement('canvas');
-    const cx = cv.getContext('2d');
-    cx.font = '9px Segoe UI, Arial, sans-serif';
-
-    colWidths = headers.map((h, i) => {
-        let max = Math.ceil(cx.measureText(h).width) + 12;
-        const sample = Math.min(rawData.length, 51);
-        for (let r = 1; r < sample; r++) {
-            const raw = rawData[r][i];
-            if (!raw) continue;
-            const str = String(raw);
-            if (isLongText(str)) {
-                max = Math.max(max, 90);
-                continue;
-            }
-            const w = Math.ceil(cx.measureText(str).width) + 8;
-            if (w > max) max = w;
-        }
-        return Math.min(Math.max(max, 36), 160);
-    });
-}
-
-function resetWidths() { computeWidths(); buildTable(); }
-
-function buildTable() {
-    let html = '<table><thead><tr id="headerRow">';
-    headers.forEach((h, i) => {
-        const hide = visibleColumns.includes(i) ? '' : 'hidden-col';
-        const w = colWidths[i] || 60;
-        html += `<th class="${hide}" data-col="${i}" style="width:${w}px;min-width:${w}px;max-width:${w}px;position:relative;">
-            <span class="col-label" title="${h}">${h}</span>
-            <div class="resizer" data-col="${i}"></div>
-        </th>`;
-    });
-    html += '</tr></thead><tbody>';
-
-    for (let r = 1; r < rawData.length; r++) {
-        html += '<tr>';
-        rawData[r].forEach((cell, idx) => {
-            const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
-            const w = colWidths[idx] || 60;
-            let val = cell || '';
-            let title = (typeof val === 'string') ? val.replace(/"/g, '&quot;') : '';
-            if (typeof val === 'string' && val.startsWith('http')) {
-                val = `<img src="${val}" class="img-cell" onerror="this.parentElement.textContent='—'">`;
-                title = '';
-            }
-            html += `<td class="${hide}" style="max-width:${w}px" title="${title}">${val}</td>`;
-        });
-        html += '</tr>';
-    }
-    html += '</tbody></table>';
-    document.getElementById('tableContainer').innerHTML = html;
-
-    Sortable.create(document.getElementById('headerRow'), {
-        animation: 100, filter: '.resizer', preventOnFilter: true
-    });
-
-    initResizers();
-}
-
-function initResizers() {
-    document.querySelectorAll('.resizer').forEach(handle => {
-        handle.addEventListener('mousedown', e => {
-            e.preventDefault(); e.stopPropagation();
-            const ci = parseInt(handle.dataset.col);
-            const th = document.querySelector(`th[data-col="${ci}"]`);
-            const startX = e.pageX;
-            const startW = th.offsetWidth;
-            handle.classList.add('dragging');
-            document.body.classList.add('resizing');
-
-            const onMove = e => {
-                const w = Math.max(24, startW + e.pageX - startX);
-                colWidths[ci] = w;
-                th.style.width = th.style.minWidth = th.style.maxWidth = w + 'px';
-                document.querySelectorAll(`#tableContainer td:nth-child(${ci + 1})`).forEach(td => {
-                    td.style.maxWidth = w + 'px';
-                });
-            };
-            const onUp = () => {
-                handle.classList.remove('dragging');
-                document.body.classList.remove('resizing');
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-            };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        });
-    });
-}
-
-function renderTable() { computeWidths(); buildTable(); }
+let itemsToShow = 80; 
 
 async function openSheet(sheetName) {
+    document.getElementById('loader').style.display = 'block';
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
     document.getElementById('tableContainer').innerHTML = '';
-    document.getElementById('filterCheckboxes').innerHTML = '';
+    itemsToShow = 80; 
     await loadData(sheetName);
 }
 
-function goHome() {
-    document.getElementById('mainHeader').style.display = 'block';
-    document.getElementById('databaseSection').style.display = 'none';
-    document.getElementById('columnFilterPanel').style.display = 'none';
-}
-
 async function loadData(sheet) {
-    document.getElementById('loader').style.display = 'block';
     try {
         const res = await fetch(`${SCRIPT_URL}?action=read&sheet=${sheet}`);
         const result = await res.json();
@@ -296,6 +134,71 @@ async function loadData(sheet) {
     } catch(e) { console.error(e); }
     document.getElementById('loader').style.display = 'none';
 }
+
+function computeWidths() {
+    const cv = document.createElement('canvas');
+    const cx = cv.getContext('2d');
+    cx.font = '9px Segoe UI';
+    colWidths = headers.map((h, i) => {
+        let max = Math.ceil(cx.measureText(h).width) + 20;
+        const sample = Math.min(rawData.length, 30);
+        for (let r = 1; r < sample; r++) {
+            const str = String(rawData[r][i] || "");
+            const w = Math.ceil(cx.measureText(str).width) + 15;
+            if (w > max) max = w;
+        }
+        return Math.min(Math.max(max, 50), 180);
+    });
+}
+
+function buildTable() {
+    let html = '<table><thead><tr id="headerRow">';
+    headers.forEach((h, i) => {
+        const hide = visibleColumns.includes(i) ? '' : 'hidden-col';
+        html += `<th class="${hide}" data-col="${i}" style="width:${colWidths[i]}px">
+                    <span class="col-label">${h}</span>
+                    <div class="resizer" data-col="${i}"></div>
+                </th>`;
+    });
+    html += '</tr></thead><tbody id="tableBody">';
+    html += renderRows(1, itemsToShow);
+    html += '</tbody></table>';
+    document.getElementById('tableContainer').innerHTML = html;
+    initResizers();
+}
+
+function renderRows(start, end) {
+    let html = '';
+    const limit = Math.min(rawData.length, end);
+    for (let r = start; r < limit; r++) {
+        html += '<tr>';
+        rawData[r].forEach((cell, idx) => {
+            const hide = visibleColumns.includes(idx) ? '' : 'hidden-col';
+            let val = cell || '';
+            if (typeof val === 'string' && val.startsWith('http')) {
+                val = `<img src="${val}" class="img-cell" loading="lazy">`;
+            }
+            html += `<td class="${hide}" style="max-width:${colWidths[idx]}px">${val}</td>`;
+        });
+        html += '</tr>';
+    }
+    return html;
+}
+
+function handleScroll() {
+    const w = document.getElementById('scrollWrapper');
+    if (w.scrollTop + w.clientHeight >= w.scrollHeight - 50) {
+        if (itemsToShow < rawData.length) {
+            const start = itemsToShow;
+            itemsToShow += 50;
+            document.getElementById('tableBody').insertAdjacentHTML('beforeend', renderRows(start, itemsToShow));
+        }
+    }
+}
+
+function renderTable() { computeWidths(); buildTable(); }
+function goHome() { document.getElementById('mainHeader').style.display = 'block'; document.getElementById('databaseSection').style.display = 'none'; }
+function toggleFilterPanel() { const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
 
 function createFilterCheckboxes() {
     const c = document.getElementById('filterCheckboxes');
@@ -314,17 +217,37 @@ function toggleCol(i, show) {
     buildTable();
 }
 
-function toggleFilterPanel() {
-    const p = document.getElementById('columnFilterPanel');
-    p.style.display = p.style.display === 'block' ? 'none' : 'block';
-}
+function resetWidths() { renderTable(); }
 
 document.getElementById('searchInput').addEventListener('input', e => {
     const q = e.target.value.toLowerCase();
-    document.querySelectorAll('#tableContainer tbody tr').forEach(tr => {
+    const rows = document.querySelectorAll('#tableBody tr');
+    rows.forEach(tr => {
         tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
     });
 });
+
+function initResizers() {
+    document.querySelectorAll('.resizer').forEach(handle => {
+        handle.addEventListener('mousedown', e => {
+            const ci = parseInt(handle.dataset.col);
+            const startX = e.pageX;
+            const th = document.querySelector(`th[data-col="${ci}"]`);
+            const startW = th.offsetWidth;
+            const onMove = ev => {
+                const w = Math.max(30, startW + ev.pageX - startX);
+                colWidths[ci] = w;
+                th.style.width = w + 'px';
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    });
+}
 </script>
 </body>
 </html>
