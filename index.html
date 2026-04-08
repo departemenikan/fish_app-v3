@@ -1,127 +1,221 @@
 <!DOCTYPE html>
+
 <html lang="id">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISH APP-V3 | Ultra Compact & Resizable</title>
+
+    <title>FISH APP-V3 | Ultra Compact & Full Width</title>
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
     <style>
-        :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; }
+
+        :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; --dark-grey: #121212; }
         
         body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: var(--bg); color: #efefef; margin: 0; padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: var(--bg); 
+            color: #efefef; 
+            margin: 0;
+            padding: 0;
             overflow-x: hidden;
         }
 
-        /* --- HEADER & NAV (Tetap Sama) --- */
-        header { text-align: center; padding: 10px; background: #000; border-bottom: 1px solid #222; }
-        h1 { font-size: 20px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
-        .subtitle { color: var(--neon); font-size: 9px; margin-bottom: 8px; }
-        .nav-container { display: flex; justify-content: center; gap: 5px; }
-        .dropbtn { 
-            background: #000; color: var(--neon); padding: 4px 8px; 
-            border: 1px solid var(--neon); font-size: 9px; cursor: pointer; 
+        /* --- HEADER & NAVIGATION --- */
+        header { text-align: center; padding: 15px 10px; background: #000; border-bottom: 1px solid #222; }
+        h1 { font-size: 26px; letter-spacing: 3px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
+        .subtitle { color: var(--neon); font-size: 9px; margin-bottom: 12px; letter-spacing: 1px; }
+
+        .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropbtn {
+            background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px;
+            font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer;
+            text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px;
         }
+        .dropdown-content {
+            display: none; position: absolute; background-color: #111; min-width: 160px;
+            z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1);
+        }
+        .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 10px; }
+        .dropdown-content a:hover { background: var(--neon); color: #000; }
+        .dropdown:hover .dropdown-content { display: block; }
 
-        /* --- DATABASE SECTION --- */
-        #databaseSection { display: none; background: #000; width: 100%; }
-        .controls { display: flex; gap: 8px; padding: 4px 10px; background: #080808; border-bottom: 1px solid #222; }
-        #searchInput { flex: 1; padding: 4px; background: #111; color: var(--neon); border: 1px solid #333; font-size: 10px; }
+        /* --- DATABASE SECTION (FULL WIDTH) --- */
+        #databaseSection { display: none; background: #000; min-height: 100vh; width: 100%; margin: 0; padding: 0; }
+        
+        .controls { 
+            display: flex; gap: 8px; align-items: center; 
+            padding: 4px 10px; background: #080808; border-bottom: 1px solid #222; 
+        }
+        
+        .btn { padding: 4px 8px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 9px; color: white; }
+        .btn-home { background: var(--accent); }
+        .btn-col { background: #333; border: 1px solid var(--neon); color: var(--neon); }
 
-        /* --- TABLE ULTRA COMPACT & RESIZABLE --- */
+        #searchInput { flex: 1; padding: 4px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 2px; font-size: 10px; outline: none; }
+
+        /* --- TABLE ULTRA COMPACT (MODIFIED - LEBIH RAPAT) --- */
         .table-wrapper { 
             overflow: auto; 
             height: calc(100vh - 45px); 
             width: 100%; 
+            margin: 0; 
+            padding: 0;
         }
 
         table { 
             border-collapse: collapse; 
-            table-layout: fixed; /* WAJIB agar kolom bisa dipaksa resize */
-            width: max-content; 
-            min-width: 100%; 
+            width: 100%; 
+            table-layout: auto; 
         }
 
         th { 
-            background: var(--neon); /* Warna biru neon seperti gambar */
-            color: #000; 
-            padding: 4px 8px; 
+            background: #1a1a1a; 
+            color: var(--neon); 
+            padding: 2px 3px;     /* DIPERKECIL: dari 3px 5px jadi 2px 3px */
             position: sticky; 
             top: 0; 
             white-space: nowrap; 
             text-align: left; 
-            font-size: 10px; 
+            font-size: 8px;       /* DIPERKECIL: dari 9px jadi 8px */
             z-index: 10; 
-            border: 1px solid #000;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            position: relative; /* Wajib untuk posisi resizer */
+            border: 1px solid #333;
         }
-
-        /* RESIZER HANDLE */
-        .resizer {
-            width: 6px;
-            height: 100%;
-            position: absolute;
-            right: 0;
-            top: 0;
-            cursor: col-resize;
-            user-select: none;
-            z-index: 11;
-        }
-        .resizer:hover { background: rgba(0,0,0,0.2); }
 
         td { 
-            padding: 2px 5px; 
+            padding: 1px 3px;     /* DIPERKECIL: dari 2px 5px jadi 1px 3px */
             border: 1px solid #222; 
             white-space: nowrap; 
-            font-size: 9.5px; 
+            font-size: 8px;       /* DIPERKECIL: dari 9.5px jadi 8px */
             color: #ddd; 
             line-height: 1.1; 
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         tr:nth-child(even) { background: #050505; }
         tr:hover { background: #151515; }
+        
+        .img-cell { 
+            height: 16px;         /* DIPERKECIL: dari 20px jadi 16px */
+            width: auto; 
+            border-radius: 1px; 
+            vertical-align: middle; 
+        }
+        
         .hidden-col { display: none; }
-        .img-cell { height: 18px; border-radius: 1px; }
 
+        #loader { text-align: center; color: var(--neon); padding: 50px; display: none; font-size: 11px; }
+
+        /* Floating Column Filter */
         #columnFilterPanel {
             display: none; position: absolute; top: 40px; left: 10px; 
             background: #111; border: 1px solid var(--neon); z-index: 500;
             padding: 10px; max-height: 300px; overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
+        .filter-item { display: block; margin-bottom: 5px; font-size: 10px; cursor: pointer; color: #aaa; }
+        
+        /* OPSIONAL: Tambahan untuk membuat header lebih rapat */
+        th:first-child, td:first-child {
+            padding-left: 3px;
+        }
+        
+        th:last-child, td:last-child {
+            padding-right: 3px;
+        }
+        
+        /* Style untuk sortable saat drag */
+        .sortable-drag {
+            opacity: 0.5;
+            background: #333;
+        }
+        
+        /* Header saat di-drag */
+        th.sortable-drag {
+            cursor: grabbing;
+        }
+        
     </style>
 </head>
+
 <body>
 
-    <!-- Header & Nav tetap sama dengan script Anda sebelumnya -->
     <header id="mainHeader">
         <h1>FISH APP-V3</h1>
         <div class="subtitle">Advanced Management System</div>
+        
         <div class="nav-container">
             <div class="dropdown">
-                <button class="dropbtn" onclick="openSheet('Master Data Ikan')">📂 DATABASE ▾</button>
+                <button class="dropbtn">📁 DATABASE ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('User')">User</a>
+                    <a href="#" onclick="openSheet('Customer')">Customer</a>
+                    <a href="#" onclick="openSheet('Data Supplier')">Data Supplier</a>
+                    <a href="#" onclick="openSheet('Harga Supplier')">Harga Supplier</a>
+                    <a href="#" onclick="openSheet('Master Data Ikan')">Master Data Ikan</a>
+                    <a href="#" onclick="openSheet('Data Ikan Bali Aquarich')">Data Ikan Bali Aquarich</a>
+                </div>
             </div>
-            <!-- ... Nav lainnya ... -->
+
+            <div class="dropdown">
+                <button class="dropbtn">🚢 PEMBELIAN ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('Nota')">Nota</a>
+                    <a href="#" onclick="openSheet('Pembelian Ikan')">Pembelian Ikan</a>
+                    <a href="#" onclick="openSheet('Stok List Wild')">Stok List Wild</a>
+                    <a href="#" onclick="openSheet('Stok List Culture')">Stok List Culture</a>
+                    <a href="#" onclick="openSheet('Stok List')">Stok List</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('Tgl Order')">Tgl Order</a>
+                    <a href="#" onclick="openSheet('Order')">Order</a>
+                    <a href="#" onclick="openSheet('Invoice')">Invoice</a>
+                    <a href="#" onclick="openSheet('Box')">Box</a>
+                    <a href="#" onclick="openSheet('Pengiriman Ikan')">Pengiriman Ikan</a>
+                    <a href="#" onclick="openSheet('Dead On Arrival')">Dead On Arrival</a>
+                    <a href="#" onclick="openSheet('List Packing')">List Packing</a>
+                </div>
+            </div>
+
+            <div class="dropdown">
+                <button class="dropbtn">📊 STOK ▾</button>
+                <div class="dropdown-content">
+                    <a href="#" onclick="openSheet('Opname')">Opname</a>
+                    <a href="#" onclick="openSheet('Kematian')">Kematian</a>
+                    <a href="#" onclick="openSheet('Kerusakan')">Kerusakan</a>
+                    <a href="#" onclick="openSheet('Rekap Stok')">Rekap Stok</a>
+                    <a href="#" onclick="openSheet('Laporan Stok')">Laporan Stok</a>
+                </div>
+            </div>
         </div>
     </header>
 
     <section id="databaseSection">
         <div class="controls">
-            <button onclick="goHome()" style="background:var(--accent); color:white; border:none; padding:4px 8px; font-size:9px;">⬅ KEMBALI</button>
-            <button onclick="toggleFilterPanel()" style="background:#333; color:var(--neon); border:1px solid var(--neon); padding:4px 8px; font-size:9px;">⚙️ KOLOM</button>
+            <button onclick="goHome()" class="btn btn-home">⬅ KEMBALI</button>
+            <button onclick="toggleFilterPanel()" class="btn btn-col">⚙️ KOLOM</button>
             <input type="text" id="searchInput" placeholder="Cari data...">
         </div>
 
-        <div id="columnFilterPanel"><div id="filterCheckboxes"></div></div>
+        <div id="columnFilterPanel">
+            <div id="filterCheckboxes"></div>
+        </div>
+        
+        <div id="loader">⚡ LOADING DATA...</div>
         <div class="table-wrapper" id="tableContainer"></div>
     </section>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOasisnR1DTEmmsvhLDcNTogQw13f5MkX0U-vUpnHNzWLiSdgO7EisEzM2EgDnYhtP/exec"; 
+        
         let rawData = [];
         let headers = [];
         let visibleColumns = [];
@@ -129,20 +223,22 @@
         async function openSheet(sheetName) {
             document.getElementById('mainHeader').style.display = 'none';
             document.getElementById('databaseSection').style.display = 'block';
+            document.getElementById('tableContainer').innerHTML = "";
+            document.getElementById('filterCheckboxes').innerHTML = "";
             await loadData(sheetName);
         }
 
         function goHome() {
             document.getElementById('mainHeader').style.display = 'block';
             document.getElementById('databaseSection').style.display = 'none';
+            document.getElementById('columnFilterPanel').style.display = 'none';
         }
 
         async function loadData(sheet) {
-            const container = document.getElementById('tableContainer');
-            container.innerHTML = "<p style='color:var(--neon); padding:10px;'>⚡ LOADING...</p>";
+            document.getElementById('loader').style.display = 'block';
             try {
-                const res = await fetch(`${SCRIPT_URL}?action=read&sheet=${sheet}`);
-                const result = await res.json();
+                const response = await fetch(`${SCRIPT_URL}?action=read&sheet=${sheet}`);
+                const result = await response.json();
                 if (result.status === "success") {
                     rawData = result.data;
                     headers = rawData[0];
@@ -150,80 +246,15 @@
                     createFilterCheckboxes();
                     renderTable();
                 }
-            } catch (e) { container.innerHTML = "Error loading data."; }
-        }
-
-        function renderTable() {
-            if (rawData.length === 0) return;
-            let html = `<table><thead><tr id="headerRow">`;
-            
-            headers.forEach((h, i) => {
-                const hide = visibleColumns.includes(i) ? "" : "hidden-col";
-                // Ditambahkan class resizer dan lebar default kecil
-                html += `<th class="${hide}" style="width: 80px;">
-                            ${h}
-                            <div class="resizer"></div>
-                         </th>`;
-            });
-            
-            html += `</tr></thead><tbody>`;
-
-            for (let i = 1; i < rawData.length; i++) {
-                html += "<tr>";
-                rawData[i].forEach((cell, idx) => {
-                    const hide = visibleColumns.includes(idx) ? "" : "hidden-col";
-                    let val = cell || "";
-                    if (typeof val === 'string' && val.includes("http")) {
-                        val = `<img src="${val}" class="img-cell" onerror="this.parentElement.innerHTML='No Image'">`;
-                    }
-                    html += `<td class="${hide}">${val}</td>`;
-                });
-                html += "</tr>";
-            }
-            html += "</tbody></table>";
-            document.getElementById('tableContainer').innerHTML = html;
-            
-            initResizable(); // AKTIFKAN FITUR RESIZE
-            Sortable.create(document.getElementById('headerRow'), { animation: 150 });
-        }
-
-        // FUNGSI RESIZE LOGIC
-        function initResizable() {
-            const ths = document.querySelectorAll('th');
-            ths.forEach(th => {
-                const resizer = th.querySelector('.resizer');
-                if (!resizer) return;
-
-                resizer.addEventListener('mousedown', function(e) {
-                    e.preventDefault();
-                    const startX = e.pageX;
-                    const startWidth = th.offsetWidth;
-
-                    const onMouseMove = (e) => {
-                        const newWidth = startWidth + (e.pageX - startX);
-                        if (newWidth > 20) { 
-                            th.style.width = newWidth + 'px';
-                        }
-                    };
-
-                    const onMouseUp = () => {
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                    };
-
-                    document.addEventListener('mousemove', onMouseMove);
-                    document.addEventListener('mouseup', onMouseUp);
-                });
-            });
+            } catch (e) { console.error(e); }
+            document.getElementById('loader').style.display = 'none';
         }
 
         function createFilterCheckboxes() {
             const container = document.getElementById('filterCheckboxes');
-            container.innerHTML = "";
             headers.forEach((h, i) => {
                 const label = document.createElement('label');
-                label.style.display = "block";
-                label.style.fontSize = "10px";
+                label.className = 'filter-item';
                 label.innerHTML = `<input type="checkbox" checked onchange="toggleColumn(${i}, this.checked)"> ${h}`;
                 container.appendChild(label);
             });
@@ -240,6 +271,55 @@
             panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
         }
 
+        function renderTable() {
+            if (rawData.length === 0) return;
+            let html = `<table><thead><tr id="headerRow">`;
+            headers.forEach((h, i) => {
+                const hide = visibleColumns.includes(i) ? "" : "hidden-col";
+                html += `<th class="${hide}">${h}</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            for (let i = 1; i < rawData.length; i++) {
+                html += "<tr>";
+                rawData[i].forEach((cell, idx) => {
+                    const hide = visibleColumns.includes(idx) ? "" : "hidden-col";
+                    let val = cell || "";
+                    if (typeof val === 'string' && val.includes("http")) {
+                        val = `<img src="${val}" class="img-cell" onerror="this.parentElement.innerHTML='No Image'">`;
+                    }
+                    html += `<td class="${hide}">${val}</td>`;
+                });
+                html += "</tr>";
+            }
+            html += "</tbody></table>";
+            document.getElementById('tableContainer').innerHTML = html;
+
+            // Inisialisasi Sortable dengan event drag end untuk menjaga header tetap rapat
+            const headerRow = document.getElementById('headerRow');
+            if (headerRow) {
+                new Sortable(headerRow, { 
+                    animation: 150,
+                    onEnd: function() {
+                        // Setelah drag selesai, pastikan urutan kolom tetap rapat
+                        const newOrder = [];
+                        const headersNew = [];
+                        const thElements = headerRow.querySelectorAll('th');
+                        thElements.forEach(th => {
+                            const headerText = th.innerText;
+                            const originalIndex = headers.findIndex(h => h === headerText);
+                            if (originalIndex !== -1) newOrder.push(originalIndex);
+                            headersNew.push(headerText);
+                        });
+                        // Update visibleColumns berdasarkan urutan baru
+                        visibleColumns = newOrder.filter(idx => visibleColumns.includes(idx));
+                        headers = headersNew;
+                        renderTable(); // Re-render untuk menerapkan urutan
+                    }
+                });
+            }
+        }
+
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             const rows = document.querySelectorAll("table tbody tr");
@@ -249,4 +329,5 @@
         });
     </script>
 </body>
+
 </html>
