@@ -105,59 +105,45 @@
 
 
         /* --- TABLE ULTRA COMPACT --- */
-
         .table-wrapper { 
-
             overflow: auto; 
-
             height: calc(100vh - 45px); 
-
             width: 100%; 
-
             margin: 0; 
-
             padding: 0;
-
         }
-
-
 
         table { 
-
             border-collapse: collapse; 
-
-            width: max-content; 
-
-            table-layout: fixed; 
-
+            width: max-content; /* AGAR TABEL TIDAK DIPAKSA MELEBAR KE KANAN */
+            min-width: 100%;
+            table-layout: fixed; /* WAJIB AGAR KOLOM BISA DI-RESIZE */
         }
-
-
 
         th { 
-
             background: #1a1a1a; color: var(--neon); 
-
             padding: 3px 5px; 
-
-            position: sticky; top: 0; white-space: nowrap; 
-
-            text-align: left; font-size: 9px; z-index: 10; border: 1px solid #333;
-
+            position: sticky; top: 0; 
+            white-space: nowrap; 
+            text-align: left; font-size: 9px; z-index: 10; 
+            border: 1px solid #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            resize: horizontal; /* MENGAKTIFKAN FITUR RESIZE MANUAL */
+            overflow: auto; 
+            min-width: 20px; /* JARAK TERPENDEK */
+            width: 80px; /* LEBAR DEFAULT AWAL */
         }
-
-
 
         td { 
-
-            padding: 2px 5px; 
-
-            border: 1px solid #222; white-space: nowrap; 
-
-            font-size: 9.5px; color: #ddd; line-height: 1.1; 
-
+            padding: 2px 4px; /* DIKECILKAN DARI 5px KE 4px AGAR LEBIH RAPAT */
+            border: 1px solid #222; 
+            white-space: nowrap; 
+            font-size: 9.5px; color: #ddd; 
+            line-height: 1.1; 
+            overflow: hidden;
+            text-overflow: ellipsis; /* POTONG TEKS JIKA KOLOM DISREMPITKAN */
         }
-
 
 
         tr:nth-child(even) { background: #050505; }
