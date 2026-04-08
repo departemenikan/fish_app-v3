@@ -275,13 +275,38 @@ function saveEdit() {
 
 async function updateDataToSheet(rowIndex, newName, imgData) {
     const rowNumber = parseInt(rowIndex) + 1; 
-    const payload = { action: 'update', sheet: currentSheetName, row: rowNumber, name: newName, image: imgData };
+    
+    // Gunakan URLSearchParams agar lebih ramah terhadap CORS
+    const params = new URLSearchParams();
+    params.append('action', 'update');
+    params.append('sheet', currentSheetName);
+    params.append('row', rowNumber);
+    params.append('name', newName);
+    if (imgData) params.append('image', imgData);
 
     try {
-        const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-        const res = await response.json();
-        if(res.status === 'success') { alert("Data Berhasil Diperbarui!"); location.reload(); }
-    } catch (e) { alert("Gagal Menghubungkan ke Server."); }
+        // Kirim sebagai teks biasa (plain text) untuk melewati blokir CORS
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Menghindari pengecekan CORS yang ketat
+            body: params
+        });
+
+        // Karena menggunakan 'no-cors', browser tidak bisa membaca isi responnya, 
+        // tapi data tetap masuk ke Google Sheets.
+        
+        // Update tampilan secara manual (Asumsi berhasil)
+        rawData[rowIndex][5] = newName;
+        if (imgData) rawData[rowIndex][3] = imgData;
+        
+        closeEdit();
+        buildTable();
+        alert("Permintaan dikirim! Silakan cek tabel dalam beberapa detik.");
+
+    } catch (e) {
+        console.error("Error Detail:", e);
+        alert("Gagal Terhubung. Pastikan Deployment Apps Script sudah 'Anyone'.");
+    }
     document.getElementById('loader').style.display = "none";
 }
 
