@@ -175,7 +175,16 @@ async function loadData(sheet) {
         if (result.status === 'success') {
             rawData = result.data;
             headers = rawData[0];
-            visibleColumns = headers.map((_, i) => i);
+            
+            // ─── AMBIL CONFIG KOLOM DARI SPREADSHEET (KOLOM W / INDEKS 22) ───
+            // Jika baris ke-2 kolom W ada isinya, pakai itu. Jika tidak, tampilkan semua.
+            const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
+            if (savedConfig) {
+                visibleColumns = savedConfig.split(',').map(Number);
+            } else {
+                visibleColumns = headers.map((_, i) => i);
+            }
+
             computeWidths();
             createFilterCheckboxes();
             rebuildFilteredIndices();
@@ -304,11 +313,31 @@ function initResize(e, i) {
     document.addEventListener('mousemove', doResize); document.addEventListener('mouseup', stop);
 }
 
+// ─── FUNGSI BARU: SIMPAN VISIBILITAS KE DATABASE (GLOBAL) ───
+async function saveColumnVisibility() {
+    const configString = visibleColumns.sort((a, b) => a - b).join(',');
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'saveConfig',
+                sheet: currentSheet,
+                config: configString
+            })
+        });
+    } catch(e) { console.error('Gagal simpan config kolom'); }
+}
+
 function toggleCol(i, show) {
-    if (show) { if (!visibleColumns.includes(i)) visibleColumns.push(i); } else visibleColumns = visibleColumns.filter(x => x !== i);
+    if (show) { if (!visibleColumns.includes(i)) visibleColumns.push(i); } 
+    else { visibleColumns = visibleColumns.filter(x => x !== i); }
+    
     const col = document.getElementById(`col-${i}`), th = document.getElementById(`th-${i}`);
     if (col) col.style.display = show ? '' : 'none'; if (th) th.classList.toggle('hidden-col', !show);
     document.querySelectorAll(`#tableBody tr td:nth-child(${i + 2})`).forEach(td => td.classList.toggle('hidden-col', !show));
+    
+    // Simpan setiap kali ada perubahan checkbox
+    saveColumnVisibility();
 }
 
 function toggleFilterPanel(event) { event.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
@@ -322,7 +351,7 @@ function createFilterCheckboxes() {
     });
 }
 
-function resetWidths() { visibleColumns = headers.map((_, i) => i); computeWidths(); createFilterCheckboxes(); buildTable(); }
+function resetWidths() { visibleColumns = headers.map((_, i) => i); saveColumnVisibility(); createFilterCheckboxes(); buildTable(); }
 
 function handleScroll() {
     const w = document.getElementById('scrollWrapper');
@@ -334,16 +363,12 @@ function handleScroll() {
     }
 }
 
-// ─── LOGIKA VIRTUAL COLUMN (AUTO-COMBINE) ───
 function updateNamaLokal() {
     const valI = document.getElementById('field-text-8') ? document.getElementById('field-text-8').value.trim() : "";
     const valJ = document.getElementById('field-text-9') ? document.getElementById('field-text-9').value.trim() : "";
-    
     const targetTextT = document.getElementById('field-text-19');
     const targetHiddenT = document.getElementById('field-19');
-
     const hasilGabung = (valI || valJ) ? (valI + " " + valJ).trim() : "";
-    
     if (targetTextT) targetTextT.value = hasilGabung;
     if (targetHiddenT) targetHiddenT.value = hasilGabung;
 }
@@ -353,24 +378,16 @@ function openModal(mode) {
     currentMode = mode;
     const form = document.getElementById('dynamicForm'); form.innerHTML = '';
     document.getElementById('modalTitle').innerText = (mode === 'add' ? `TAMBAH : ${currentSheet}` : `EDIT : ${currentSheet}`);
-
     headers.forEach((h, i) => {
         const val = mode === 'edit' ? String(rawData[selectedRowIndex][i] ?? '') : '';
         const isImg = h.toLowerCase().includes('image') || h.toLowerCase().includes('foto');
-        
-        // INDEX KOLOM: I=8, J=9, T=19
-        const isLocalName = (i === 8); 
-        const isSize = (i === 9);      
-        const isNamaLokal = (i === 19);
-
+        const isLocalName = (i === 8); const isSize = (i === 9); const isNamaLokal = (i === 19);
         const group = document.createElement('div'); group.className = 'form-group';
         const label = document.createElement('label');
         label.innerHTML = h + (isNamaLokal ? ' <span class="lock-badge">🔒 AUTO-COMBINE</span>' : '');
         group.appendChild(label);
-
         const hiddenInp = document.createElement('input'); hiddenInp.type = 'hidden'; hiddenInp.id = `field-${i}`; hiddenInp.value = val;
         group.appendChild(hiddenInp);
-
         if (isImg) {
             const fileInp = document.createElement('input'); fileInp.type = 'file'; fileInp.accept = 'image/*';
             fileInp.addEventListener('change', () => uploadToDrive(fileInp, i)); group.appendChild(fileInp);
@@ -379,23 +396,13 @@ function openModal(mode) {
             group.appendChild(prev);
         } else {
             const inp = document.createElement('input'); inp.type = 'text'; inp.id = `field-text-${i}`; inp.value = val;
-            
             if (isNamaLokal) { inp.readOnly = true; inp.className = 'locked'; }
-
-            // Listener Virtual Column
-            inp.addEventListener('input', () => { 
-                hiddenInp.value = inp.value; 
-                if (isLocalName || isSize) updateNamaLokal();
-            });
-            
+            inp.addEventListener('input', () => { hiddenInp.value = inp.value; if (isLocalName || isSize) updateNamaLokal(); });
             group.appendChild(inp);
         }
         form.appendChild(group);
     });
-    
-    // Inisialisasi awal jika mode edit
     if (mode === 'edit') updateNamaLokal();
-    
     document.getElementById('dataModal').style.display = 'block';
 }
 
@@ -403,20 +410,12 @@ function closeModal() { document.getElementById('dataModal').style.display = 'no
 
 async function uploadToDrive(input, colIndex) {
     const file = input.files[0]; if (!file) return;
-
-    // Ambil Nama Lokal (Indeks 19) dari UI form (hasil updateNamaLokal)
     const namaLokalField = document.getElementById('field-text-19');
     let namaLokal = namaLokalField ? namaLokalField.value.trim() : '';
-    
-    if (!namaLokal) {
-        alert("Nama Lokal (Kolom T) kosong! Pastikan Local Name (I) dan Size (J) sudah diisi.");
-        input.value = ''; return;
-    }
-
+    if (!namaLokal) { alert("Nama Lokal (Kolom T) kosong!"); input.value = ''; return; }
     const cleanName = namaLokal.replace(/[/\\?%*:|"<>]/g, '-');
     const ext = file.name.split('.').pop();
     const fileName = `${cleanName}.${ext}`;
-
     showLoader('⚡ UPLOADING: ' + fileName);
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -438,11 +437,8 @@ async function uploadToDrive(input, colIndex) {
 
 async function handleSave() {
     const formFields = headers.map((_, i) => { const hid = document.getElementById(`field-${i}`); return hid ? hid.value : ''; });
-    
-    // Pastikan Nama Lokal terbaru ikut tersimpan
     const namaLokalTerbaru = document.getElementById('field-text-19') ? document.getElementById('field-text-19').value : "";
     formFields[19] = namaLokalTerbaru;
-
     showLoader('⚡ MENYIMPAN...');
     try {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: selectedRowIndex, data: formFields }) });
@@ -463,717 +459,6 @@ async function handleSave() {
 window.addEventListener('click', e => {
     const panel = document.getElementById('columnFilterPanel'); const btn = document.getElementById('btnFilterCol');
     if (panel?.style.display === 'block' && !panel.contains(e.target) && e.target !== btn) panel.style.display = 'none';
-});
-</script>
-</body>
-</html><!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISH APP-V3 | High Performance</title>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <style>
-        :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; --green: #00ff88; }
-        *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #efefef; margin: 0; padding: 0; overflow-x: hidden; }
-
-        header { text-align: center; padding: 15px 10px; background: #000; border-bottom: 1px solid #222; }
-        h1 { font-size: 26px; letter-spacing: 3px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
-        .subtitle { color: var(--neon); font-size: 9px; margin-bottom: 12px; letter-spacing: 1px; }
-
-        .nav-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
-        .dropdown { position: relative; display: inline-block; }
-        .dropbtn { background: rgba(0,0,0,0.8); color: var(--neon); padding: 5px 10px; font-weight: bold; border: 1px solid var(--neon); border-radius: 3px; cursor: pointer; text-transform: uppercase; font-size: 10px; display: flex; align-items: center; gap: 5px; }
-        .dropdown-content { display: none; position: absolute; background-color: #111; min-width: 170px; z-index: 100; border: 1px solid var(--neon); box-shadow: 0 8px 16px rgba(0,0,0,1); }
-        .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 10px; }
-        .dropdown-content a:hover { background: var(--neon); color: #000; }
-        .dropdown:hover .dropdown-content { display: block; }
-
-        #homePageContent { height: calc(100vh - 105px); width: 100%; display: flex; justify-content: center; align-items: flex-start; background: #000; overflow: hidden; }
-        .home-logo { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-
-        .controls { display: flex; gap: 6px; align-items: center; padding: 6px 10px; background: #080808; border-bottom: 1px solid #222; position: relative; flex-wrap: wrap; }
-        #columnFilterPanel { display: none; position: absolute; top: 40px; left: 85px; background: #111; border: 1px solid var(--neon); padding: 10px; border-radius: 4px; box-shadow: 5px 5px 20px rgba(0,0,0,0.9); z-index: 1000; width: 280px; max-height: 450px; overflow-y: auto; }
-        .filter-item { font-size: 11px; color: #ccc; display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 8px; border-radius: 3px; border-bottom: 1px solid #222; }
-        .filter-item:hover { background: #222; color: var(--neon); }
-        .filter-item input { accent-color: var(--neon); cursor: pointer; }
-
-        #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
-        .btn { padding: 4px 8px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 9px; color: white; text-transform: uppercase; }
-        .btn-home { background: var(--accent); }
-        .btn-add { background: var(--green); color: #000; }
-        .btn-edit { background: var(--neon); color: #000; }
-        .btn-col { background: #222; border: 1px solid var(--neon); color: var(--neon); }
-        .btn-reset { background: #1a1a1a; border: 1px solid #444; color: #888; }
-
-        #searchInput { width: 180px; padding: 4px 8px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
-        #rowCounter { font-size: 9px; color: #555; white-space: nowrap; }
-
-        .table-wrapper { overflow: auto; height: calc(100vh - 130px); width: 100%; position: relative; }
-        table { border-collapse: collapse; table-layout: fixed; width: max-content; }
-        th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
-        td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-
-        .resizer { position: absolute; right: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 11; }
-        .resizer:hover { background: var(--neon); }
-
-        /* BUG FIX: gunakan CSS class bukan inline style agar baris index 0 tetap bisa di-highlight */
-        tr.selected-row { background: rgba(0, 210, 255, 0.15) !important; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; backdrop-filter: blur(4px); }
-        .modal-content { background: #111; border: 1px solid var(--neon); width: 90%; max-width: 450px; margin: 20px auto; padding: 25px; border-radius: 8px; max-height: 85vh; overflow-y: auto; }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 10px; color: var(--neon); margin-bottom: 4px; text-transform: uppercase; }
-        .form-group input[type="text"] { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; font-size: 11px; }
-        .form-group input[type="text"].locked { background: #1a1a1a; color: #888; border: 1px solid #222; }
-        .img-preview { max-width: 150px; margin-top: 5px; border: 1px solid var(--neon); display: none; }
-        .img-cell { max-height: 25px; width: auto; display: block; margin: 0 auto; border-radius: 2px; }
-        .hidden-col { display: none; }
-        .text-center { text-align: center !important; }
-        .text-right { text-align: right !important; }
-
-        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
-
-        /* Badge kunci kolom T */
-        .lock-badge { font-size: 8px; color: #888; margin-left: 4px; }
-    </style>
-</head>
-<body>
-
-<div id="loader">⚡ LOADING...</div>
-
-<div id="dataModal" class="modal">
-    <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--neon); margin:0 0 15px 0; text-align:center; font-size:14px;">FORM DATA</h3>
-        <form id="dynamicForm" onsubmit="return false;"></form>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-add" style="flex:2; padding:10px;" onclick="handleSave()">SIMPAN</button>
-            <button class="btn btn-home" style="flex:1" onclick="closeModal()">BATAL</button>
-        </div>
-    </div>
-</div>
-
-<header id="mainHeader">
-    <h1>FISH APP-V3</h1>
-    <div class="subtitle">Sistem Management Inventory Ikan</div>
-    <div class="nav-container">
-        <div class="dropdown">
-            <button class="dropbtn">📁 DATABASE ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('User')">User</a>
-                <a href="#" onclick="openSheet('Customer')">Customer</a>
-                <a href="#" onclick="openSheet('Data Supplier')">Data Supplier</a>
-                <a href="#" onclick="openSheet('Harga Supplier')">Harga Supplier</a>
-                <a href="#" onclick="openSheet('Master Data Ikan')">Master Data Ikan</a>
-                <a href="#" onclick="openSheet('Data Ikan Bali Aquarich')">Data Ikan Bali Aquarich</a>
-            </div>
-        </div>
-        <div class="dropdown">
-            <button class="dropbtn">🚢 PEMBELIAN ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Nota')">Nota</a>
-                <a href="#" onclick="openSheet('Pembelian Ikan')">Pembelian Ikan</a>
-                <a href="#" onclick="openSheet('Stok List Wild')">Stok List Wild</a>
-                <a href="#" onclick="openSheet('Stok List Culture')">Stok List Culture</a>
-                <a href="#" onclick="openSheet('Stok List')">Stok List</a>
-            </div>
-        </div>
-        <div class="dropdown">
-            <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Tgl Order')">Tgl Order</a>
-                <a href="#" onclick="openSheet('Order')">Order</a>
-                <a href="#" onclick="openSheet('Invoice')">Invoice</a>
-                <a href="#" onclick="openSheet('Box')">Box</a>
-                <a href="#" onclick="openSheet('Pengiriman Ikan')">Pengiriman Ikan</a>
-                <a href="#" onclick="openSheet('Dead On Arrival')">Dead On Arrival</a>
-                <a href="#" onclick="openSheet('List Packing')">List Packing</a>
-            </div>
-        </div>
-        <div class="dropdown">
-            <button class="dropbtn">📊 STOK ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Opname')">Opname</a>
-                <a href="#" onclick="openSheet('Kematian')">Kematian</a>
-                <a href="#" onclick="openSheet('Kerusakan')">Kerusakan</a>
-                <a href="#" onclick="openSheet('Rekap Stok')">Rekap Stok</a>
-                <a href="#" onclick="openSheet('Laporan Stok')">Laporan Stok</a>
-            </div>
-        </div>
-    </div>
-</header>
-
-<section id="homePageContent">
-    <img src="Home_Image.png" alt="Fish App Logo" class="home-logo" loading="lazy">
-</section>
-
-<section id="databaseSection">
-    <div class="controls">
-        <button onclick="goHome()" class="btn btn-home">⬅ KEMBALI</button>
-        <button onclick="openModal('add')" class="btn btn-add">+ TAMBAH</button>
-        <button onclick="openModal('edit')" class="btn btn-edit">✎ EDIT</button>
-        <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol">⚙ KOLOM</button>
-        <div id="columnFilterPanel">
-            <div id="filterCheckboxes"></div>
-        </div>
-        <button onclick="resetWidths()" class="btn btn-reset">↺ RESET</button>
-        <span style="flex:1"></span>
-        <span id="rowCounter"></span>
-        <input type="search" id="searchInput" placeholder="Cari data...">
-    </div>
-
-    <div class="table-wrapper" id="scrollWrapper">
-        <div id="tableContainer"></div>
-    </div>
-</section>
-
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6-vt9kenZRDQS39qRfwhhZhUUYx1ee0N9HyhK1ZnZ4XdQ9-Flm-uzMhkj6OUtCwfz/exec";
-
-// ─── State ────────────────────────────────────────────────────────────────────
-let rawData = [], headers = [], visibleColumns = [], colWidths = [];
-let filteredIndices = [];
-let itemsToShow = 50;
-let currentSheet = "";
-let selectedRowIndex = null;   // null = belum pilih, number = sudah pilih (termasuk 0)
-let searchQuery = "";
-let tableBody = null;
-let colgroup = null;
-let currentMode = "";          // simpan mode modal agar tidak parse innerText
-
-// ─── Loader ───────────────────────────────────────────────────────────────────
-function showLoader(msg) {
-    const l = document.getElementById('loader');
-    l.innerText = msg || '⚡ LOADING...';
-    l.style.display = 'block';
-}
-function hideLoader() { document.getElementById('loader').style.display = 'none'; }
-
-// ─── Navigasi ─────────────────────────────────────────────────────────────────
-async function openSheet(sheetName) {
-    currentSheet = sheetName;
-    selectedRowIndex = null;
-    document.getElementById('tableContainer').innerHTML = '';
-    showLoader();
-    document.getElementById('mainHeader').style.display = 'none';
-    document.getElementById('homePageContent').style.display = 'none';
-    document.getElementById('databaseSection').style.display = 'block';
-    await loadData(sheetName);
-}
-
-function goHome() {
-    document.getElementById('mainHeader').style.display = 'block';
-    document.getElementById('homePageContent').style.display = 'flex';
-    document.getElementById('databaseSection').style.display = 'none';
-}
-
-// ─── Load Data ────────────────────────────────────────────────────────────────
-async function loadData(sheet) {
-    try {
-        const res = await fetch(`${SCRIPT_URL}?action=read&sheet=${encodeURIComponent(sheet)}`);
-        const result = await res.json();
-        if (result.status === 'success') {
-            rawData = result.data;
-            headers = rawData[0];
-            visibleColumns = headers.map((_, i) => i);
-            computeWidths();
-            createFilterCheckboxes();
-            rebuildFilteredIndices();
-            buildTable();
-        } else {
-            alert('Gagal memuat data: ' + result.message);
-        }
-    } catch(e) { console.error(e); alert('Gagal koneksi ke server.'); }
-    hideLoader();
-}
-
-function computeWidths() {
-    colWidths = headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200));
-}
-
-// ─── Filter & Search (debounced, index-based) ─────────────────────────────────
-function rebuildFilteredIndices() {
-    const q = searchQuery.toLowerCase();
-    filteredIndices = [];
-    for (let r = 1; r < rawData.length; r++) {
-        if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) {
-            filteredIndices.push(r);
-        }
-    }
-    updateRowCounter();
-}
-
-function updateRowCounter() {
-    const shown = Math.min(itemsToShow, filteredIndices.length);
-    document.getElementById('rowCounter').textContent =
-        `${shown} / ${filteredIndices.length} baris`;
-}
-
-let _searchTimer = null;
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('searchInput').addEventListener('input', function() {
-        clearTimeout(_searchTimer);
-        _searchTimer = setTimeout(() => {
-            searchQuery = this.value;
-            rebuildFilteredIndices();
-            tableBody.innerHTML = '';
-            itemsToShow = 50;
-            appendRows(0, itemsToShow);
-            updateRowCounter();
-        }, 200);
-    });
-
-    // throttled scroll via rAF
-    let ticking = false;
-    document.getElementById('scrollWrapper').addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(() => { handleScroll(); ticking = false; });
-            ticking = true;
-        }
-    }, { passive: true });
-});
-
-// ─── Build Table (sekali per sheet) ──────────────────────────────────────────
-function buildTable() {
-    itemsToShow = 50;
-    const frag = document.createDocumentFragment();
-    const tbl = document.createElement('table');
-
-    // colgroup untuk resize efisien
-    colgroup = document.createElement('colgroup');
-    const selCol = document.createElement('col');
-    selCol.style.width = '40px';
-    colgroup.appendChild(selCol);
-    headers.forEach((_, i) => {
-        const col = document.createElement('col');
-        col.id = `col-${i}`;
-        col.style.width = colWidths[i] + 'px';
-        if (!visibleColumns.includes(i)) col.style.display = 'none';
-        colgroup.appendChild(col);
-    });
-    tbl.appendChild(colgroup);
-
-    // thead
-    const thead = document.createElement('thead');
-    const hrow = document.createElement('tr');
-    const thSel = document.createElement('th');
-    thSel.style.width = '40px';
-    thSel.textContent = 'SEL';
-    hrow.appendChild(thSel);
-    headers.forEach((h, i) => {
-        const th = document.createElement('th');
-        th.id = `th-${i}`;
-        th.style.width = colWidths[i] + 'px';
-        if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-        th.textContent = h;
-        const resizer = document.createElement('div');
-        resizer.className = 'resizer';
-        resizer.addEventListener('mousedown', e => initResize(e, i));
-        th.appendChild(resizer);
-        hrow.appendChild(th);
-    });
-    thead.appendChild(hrow);
-    tbl.appendChild(thead);
-
-    tableBody = document.createElement('tbody');
-    tableBody.id = 'tableBody';
-    tbl.appendChild(tableBody);
-
-    frag.appendChild(tbl);
-    const container = document.getElementById('tableContainer');
-    container.innerHTML = '';
-    container.appendChild(frag);
-
-    appendRows(0, itemsToShow);
-    updateRowCounter();
-}
-
-// ─── Render Baris (DocumentFragment, bukan string concat) ────────────────────
-function appendRows(fromIdx, toIdx) {
-    const frag = document.createDocumentFragment();
-    const limit = Math.min(filteredIndices.length, toIdx);
-    for (let fi = fromIdx; fi < limit; fi++) {
-        frag.appendChild(createRow(filteredIndices[fi]));
-    }
-    tableBody.appendChild(frag);
-}
-
-function createRow(r) {
-    const tr = document.createElement('tr');
-    tr.id = `tr-${r}`;
-    tr.addEventListener('click', () => selectRow(r));
-
-    const tdSel = document.createElement('td');
-    tdSel.className = 'text-center';
-    const radio = document.createElement('input');
-    radio.type = 'radio';
-    radio.name = 'rowSelect';
-    radio.id = `rad-${r}`;
-    tdSel.appendChild(radio);
-    tr.appendChild(tdSel);
-
-    rawData[r].forEach((cell, idx) => {
-        const td = document.createElement('td');
-        if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
-        if (idx === 0 || (idx >= 9 && idx <= 12) || (idx >= 20 && idx <= 21)) td.classList.add('text-center');
-        else if (idx >= 13 && idx <= 15) td.classList.add('text-right');
-
-        const val = cell != null ? String(cell) : '';
-        const trimmed = val.trim();
-
-        // BUG FIX #2: deteksi URL gambar + konversi drive.google.com ke thumbnail URL
-        if (trimmed !== '') {
-            const imgUrl = toDisplayableImgUrl(trimmed);
-            if (imgUrl) {
-                const img = document.createElement('img');
-                img.src = imgUrl;
-                img.className = 'img-cell';
-                img.loading = 'lazy';
-                img.referrerPolicy = 'no-referrer';
-                img.onerror = function() {
-                    this.outerHTML = '<span style="color:#f44;font-size:9px" title="' + trimmed + '">❌</span>';
-                };
-                td.appendChild(img);
-            } else {
-                td.textContent = val;
-            }
-        }
-        tr.appendChild(td);
-    });
-    return tr;
-}
-
-/**
- * BUG FIX #2: Konversi URL Drive ke format yang bisa ditampilkan browser.
- * drive.google.com/uc?export=view&id=XXX  → diblokir browser modern (CORB).
- * Solusi: pakai format thumbnail  drive.google.com/thumbnail?id=XXX&sz=s100
- * yang merupakan redirect ke lh3.googleusercontent.com dan tidak kena CORB.
- */
-function toDisplayableImgUrl(url) {
-    if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
-
-    // Sudah format thumbnail / googleusercontent → langsung pakai
-    if (url.includes('googleusercontent.com')) return url;
-
-    // Format /thumbnail?id= → sudah benar
-    if (url.includes('drive.google.com/thumbnail')) return url;
-
-    // Format /uc?export=view&id=XXX → konversi ke thumbnail
-    const ucMatch = url.match(/[?&]id=([\w-]+)/);
-    if (url.includes('drive.google.com') && ucMatch) {
-        return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=s80`;
-    }
-
-    // URL gambar biasa (.jpg, .png, dll)
-    if (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
-
-    return null;
-}
-
-// ─── Select Baris ─────────────────────────────────────────────────────────────
-// BUG FIX #3: gunakan !== null bukan !selectedRowIndex agar index 0 bisa dipilih
-function selectRow(index) {
-    if (selectedRowIndex !== null) {
-        document.getElementById(`tr-${selectedRowIndex}`)?.classList.remove('selected-row');
-    }
-    selectedRowIndex = index;
-    document.getElementById(`tr-${index}`)?.classList.add('selected-row');
-    document.getElementById(`rad-${index}`).checked = true;
-}
-
-// ─── Resize Kolom (via colgroup, bukan per-td) ────────────────────────────────
-function initResize(e, i) {
-    e.stopPropagation();
-    const startX = e.pageX;
-    const startWidth = colWidths[i];
-    const col = document.getElementById(`col-${i}`);
-    const th = document.getElementById(`th-${i}`);
-    const doResize = m => {
-        const nW = Math.max(20, startWidth + (m.pageX - startX));
-        colWidths[i] = nW;
-        col.style.width = nW + 'px';
-        th.style.width = nW + 'px';
-    };
-    const stop = () => {
-        document.removeEventListener('mousemove', doResize);
-        document.removeEventListener('mouseup', stop);
-    };
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stop);
-}
-
-// ─── Toggle Kolom (tanpa rebuild seluruh tabel) ───────────────────────────────
-function toggleCol(i, show) {
-    if (show) { if (!visibleColumns.includes(i)) visibleColumns.push(i); }
-    else { visibleColumns = visibleColumns.filter(x => x !== i); }
-    document.getElementById(`col-${i}`).style.display = show ? '' : 'none';
-    document.getElementById(`th-${i}`).classList.toggle('hidden-col', !show);
-    document.querySelectorAll(`#tableBody tr td:nth-child(${i + 2})`).forEach(td => {
-        td.classList.toggle('hidden-col', !show);
-    });
-}
-
-function toggleFilterPanel(event) {
-    event.stopPropagation();
-    const p = document.getElementById('columnFilterPanel');
-    p.style.display = p.style.display === 'block' ? 'none' : 'block';
-}
-
-function createFilterCheckboxes() {
-    const container = document.getElementById('filterCheckboxes');
-    container.innerHTML = '';
-    headers.forEach((h, i) => {
-        const lbl = document.createElement('label');
-        lbl.className = 'filter-item';
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = true;
-        cb.addEventListener('change', () => toggleCol(i, cb.checked));
-        lbl.appendChild(cb);
-        lbl.append(' ' + h);
-        container.appendChild(lbl);
-    });
-}
-
-function resetWidths() {
-    visibleColumns = headers.map((_, i) => i);
-    computeWidths();
-    createFilterCheckboxes();
-    buildTable();
-}
-
-// ─── Infinite Scroll ──────────────────────────────────────────────────────────
-function handleScroll() {
-    const w = document.getElementById('scrollWrapper');
-    if (w.scrollTop + w.clientHeight >= w.scrollHeight - 100) {
-        if (itemsToShow < filteredIndices.length) {
-            const start = itemsToShow;
-            itemsToShow = Math.min(itemsToShow + 50, filteredIndices.length);
-            appendRows(start, itemsToShow);
-            updateRowCounter();
-        }
-    }
-}
-
-// ─── Modal Form ───────────────────────────────────────────────────────────────
-// BUG FIX #3: cek selectedRowIndex !== null (bukan !selectedRowIndex)
-function openModal(mode) {
-    if (mode === 'edit' && selectedRowIndex === null) {
-        alert("Pilih data pada tabel terlebih dahulu!");
-        return;
-    }
-    currentMode = mode;   // simpan mode di variabel, bukan di DOM text
-    const form = document.getElementById('dynamicForm');
-    form.innerHTML = '';
-    document.getElementById('modalTitle').innerText =
-        mode === 'add' ? `TAMBAH : ${currentSheet}` : `EDIT : ${currentSheet}`;
-
-    headers.forEach((h, i) => {
-        const val = mode === 'edit' ? String(rawData[selectedRowIndex][i] ?? '') : '';
-        const isImg = h.toLowerCase().includes('image') || h.toLowerCase().includes('foto');
-        // Kolom T (index 19) = Nama Lokal: dikunci saat edit agar tidak sengaja berubah
-        const isNamaLokal = (i === 19);
-        const locked = (mode === 'edit' && isNamaLokal);
-
-        const group = document.createElement('div');
-        group.className = 'form-group';
-
-        const label = document.createElement('label');
-        label.textContent = h + (locked ? ' 🔒' : '');
-        group.appendChild(label);
-
-        // Hidden input untuk field gambar (menyimpan URL)
-        const hiddenInp = document.createElement('input');
-        hiddenInp.type = 'hidden';
-        hiddenInp.id = `field-${i}`;
-        hiddenInp.value = val;
-        group.appendChild(hiddenInp);
-
-        if (isImg) {
-            // Tampilkan URL saat ini sebagai text read-only (informatif)
-            if (val) {
-                const urlDisplay = document.createElement('input');
-                urlDisplay.type = 'text';
-                urlDisplay.value = val;
-                urlDisplay.readOnly = true;
-                urlDisplay.className = 'locked';
-                urlDisplay.style.fontSize = '9px';
-                group.appendChild(urlDisplay);
-            }
-            const fileInp = document.createElement('input');
-            fileInp.type = 'file';
-            fileInp.accept = 'image/*';
-            // BUG FIX #1: simpan rowIndex saat modal dibuka, bukan data-attribute yg bisa stale
-            fileInp.dataset.rowIndex = String(selectedRowIndex);
-            fileInp.addEventListener('change', () => uploadToDrive(fileInp, i));
-            group.appendChild(fileInp);
-
-            const prev = document.createElement('img');
-            prev.id = `prev-${i}`;
-            prev.className = 'img-preview';
-            if (val) {
-                const imgUrl = toDisplayableImgUrl(val);
-                if (imgUrl) {
-                    prev.src = imgUrl;
-                    prev.style.display = 'block';
-                    prev.onerror = () => { prev.style.display = 'none'; };
-                }
-            }
-            group.appendChild(prev);
-        } else {
-            // Field teks biasa
-            const inp = document.createElement('input');
-            inp.type = 'text';
-            inp.id = `field-text-${i}`;  // ID berbeda agar tidak konflik dengan hidden
-            inp.value = val;
-            if (locked) {
-                inp.readOnly = true;
-                inp.className = 'locked';
-            }
-            // sync ke hidden input saat user mengetik
-            inp.addEventListener('input', () => { hiddenInp.value = inp.value; });
-            group.appendChild(inp);
-        }
-
-        form.appendChild(group);
-    });
-    document.getElementById('dataModal').style.display = 'block';
-}
-
-function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
-
-// ─── Upload Gambar ke Drive ───────────────────────────────────────────────────
-async function uploadToDrive(input, colIndex) {
-    const file = input.files[0];
-    if (!file) return;
-
-    // BUG FIX #1: ambil Nama Lokal dari rawData (bukan dari field form yg mungkin kosong)
-    const rowIdx = input.dataset.rowIndex;
-    let namaLokal = '';
-    if (rowIdx !== 'null' && rowIdx !== '' && rawData[rowIdx]) {
-        namaLokal = String(rawData[rowIdx][19] ?? '').trim();
-    }
-    // Fallback: cari dari field text di form (mode add)
-    if (!namaLokal) {
-        const fieldText = document.getElementById('field-text-19');
-        namaLokal = fieldText ? fieldText.value.trim() : '';
-    }
-
-    if (!namaLokal) {
-        alert("Nama Lokal (Kolom T) kosong!\nIsi Nama Lokal terlebih dahulu agar nama file sesuai.");
-        input.value = '';
-        return;
-    }
-
-    const cleanFileName = namaLokal.replace(/[/\\?%*:|"<>]/g, '-');
-    const ext = file.name.split('.').pop().toLowerCase();
-    const finalName = `${cleanFileName}.${ext}`;
-
-    showLoader('⚡ UPLOAD GAMBAR: ' + finalName);
-
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-        const base64 = ev.target.result.split(',')[1];
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'upload',
-                    fileData: base64,
-                    fileName: finalName,
-                    fileMime: file.type
-                })
-            });
-            const result = await res.json();
-            if (result.status === 'success') {
-                // Simpan URL thumbnail (bisa ditampilkan browser)
-                const savedUrl = result.url;  // sudah format thumbnail dari Apps Script
-                document.getElementById(`field-${colIndex}`).value = savedUrl;
-
-                const prev = document.getElementById(`prev-${colIndex}`);
-                if (prev) {
-                    const imgUrl = toDisplayableImgUrl(savedUrl) || savedUrl;
-                    prev.src = imgUrl;
-                    prev.style.display = 'block';
-                }
-                alert('✅ Gambar berhasil diupload!\nFile: ' + finalName);
-            } else {
-                alert('Upload Gagal: ' + result.message);
-            }
-        } catch {
-            alert('Upload Gagal! Cek koneksi internet.');
-        } finally {
-            hideLoader();
-        }
-    };
-    reader.readAsDataURL(file);
-}
-
-// ─── Simpan Data ──────────────────────────────────────────────────────────────
-// BUG FIX #1: ambil nilai dari field hidden (bukan field text) untuk semua kolom
-async function handleSave() {
-    const formFields = headers.map((_, i) => {
-        const hidden = document.getElementById(`field-${i}`);
-        return hidden ? hidden.value : '';
-    });
-
-    // BUG FIX #1: untuk kolom Nama Lokal (19), saat mode edit pakai nilai dari rawData
-    // agar tidak bisa berubah meski field teks di-edit (double protection)
-    if (currentMode === 'edit' && selectedRowIndex !== null) {
-        formFields[19] = String(rawData[selectedRowIndex][19] ?? '');
-    }
-
-    await updateDataToSheet(selectedRowIndex, formFields, currentMode);
-}
-
-async function updateDataToSheet(rowIndex, formFields, mode) {
-    showLoader('⚡ MEMPROSES DATA...');
-    try {
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'save',
-                sheet: currentSheet,
-                rowIndex: rowIndex,
-                data: formFields
-            })
-        });
-        const res = await response.json();
-        if (res.status === 'success') {
-            if (mode === 'edit') {
-                rawData[rowIndex] = formFields;
-                // Update hanya baris yg berubah, tidak rebuild seluruh tabel
-                const oldTr = document.getElementById(`tr-${rowIndex}`);
-                if (oldTr) oldTr.replaceWith(createRow(rowIndex));
-                selectRow(rowIndex);
-            } else {
-                rawData.push(formFields);
-                rebuildFilteredIndices();
-                const newIdx = rawData.length - 1;
-                if (filteredIndices.includes(newIdx)) {
-                    tableBody.appendChild(createRow(newIdx));
-                    updateRowCounter();
-                }
-            }
-            closeModal();
-            alert('✅ Data Berhasil Disimpan!');
-        } else {
-            alert('Gagal: ' + res.message);
-        }
-    } catch {
-        alert('Gagal Koneksi. Cek internet.');
-    }
-    hideLoader();
-}
-
-// ─── Tutup panel saat klik luar ───────────────────────────────────────────────
-window.addEventListener('click', e => {
-    const panel = document.getElementById('columnFilterPanel');
-    const btn = document.getElementById('btnFilterCol');
-    if (panel?.style.display === 'block' && !panel.contains(e.target) && e.target !== btn) {
-        panel.style.display = 'none';
-    }
 });
 </script>
 </body>
