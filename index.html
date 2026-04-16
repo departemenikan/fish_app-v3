@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FISH APP-V3 | High Performance</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; --green: #00ff88; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -21,20 +22,22 @@
         .dropdown:hover .dropdown-content { display: block; }
         #homePageContent { height: calc(100vh - 105px); width: 100%; display: flex; justify-content: center; align-items: flex-start; background: #000; overflow: hidden; }
         .home-logo { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-        .controls { display: flex; gap: 6px; align-items: center; padding: 6px 10px; background: #080808; border-bottom: 1px solid #222; position: relative; flex-wrap: wrap; }
-        #columnFilterPanel { display: none; position: absolute; top: 40px; left: 85px; background: #111; border: 1px solid var(--neon); padding: 10px; border-radius: 4px; box-shadow: 5px 5px 20px rgba(0,0,0,0.9); z-index: 1000; width: 280px; max-height: 450px; overflow-y: auto; }
+        .controls { display: flex; gap: 8px; align-items: center; padding: 6px 15px; background: #080808; border-bottom: 1px solid #222; position: relative; flex-wrap: wrap; }
+        .btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; color: white; transition: all 0.2s ease; position: relative; }
+        .btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+        .btn-home { background: var(--accent); }
+        .btn-add { background: var(--green); color: #000; }
+        .btn-edit { background: var(--neon); color: #000; }
+        .btn-delete { background: #ff1111; color: white; }
+        .btn-col { background: #222; border: 1px solid var(--neon); color: var(--neon); }
+        .btn-reset { background: #1a1a1a; border: 1px solid #444; color: #888; }
+        #columnFilterPanel { display: none; position: absolute; top: 45px; left: 15px; background: #111; border: 1px solid var(--neon); padding: 10px; border-radius: 4px; box-shadow: 5px 5px 20px rgba(0,0,0,0.9); z-index: 1000; width: 280px; max-height: 450px; overflow-y: auto; }
         .filter-item { font-size: 11px; color: #ccc; display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 8px; border-radius: 3px; border-bottom: 1px solid #222; }
         .filter-item:hover { background: #222; color: var(--neon); }
         .filter-item input { accent-color: var(--neon); cursor: pointer; }
         #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
-        .btn { padding: 4px 8px; border-radius: 2px; border: none; cursor: pointer; font-weight: bold; font-size: 9px; color: white; text-transform: uppercase; }
-        .btn-home { background: var(--accent); }
-        .btn-add { background: var(--green); color: #000; }
-        .btn-edit { background: var(--neon); color: #000; }
-        .btn-col { background: #222; border: 1px solid var(--neon); color: var(--neon); }
-        .btn-reset { background: #1a1a1a; border: 1px solid #444; color: #888; }
-        #searchInput { width: 180px; padding: 4px 8px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
-        #rowCounter { font-size: 9px; color: #555; white-space: nowrap; }
+        #searchInput { width: 180px; padding: 6px 10px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
+        #rowCounter { font-size: 10px; color: #777; white-space: nowrap; margin-right: 10px; }
         .table-wrapper { overflow: auto; height: calc(100vh - 130px); width: 100%; position: relative; }
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
         th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
@@ -46,15 +49,13 @@
         .modal-content { background: #111; border: 1px solid var(--neon); width: 90%; max-width: 450px; margin: 20px auto; padding: 25px; border-radius: 8px; max-height: 85vh; overflow-y: auto; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 10px; color: var(--neon); margin-bottom: 4px; text-transform: uppercase; }
-        .form-group input[type="text"] { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; font-size: 11px; }
-        .form-group input[type="text"].locked { background: #1a1a1a; color: #888; border: 1px solid #222; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; font-size: 11px; }
+        .form-group input.locked { background: #1a1a1a; color: #888; border: 1px solid #222; }
         .img-preview { max-width: 150px; margin-top: 5px; border: 1px solid var(--neon); display: none; }
         .img-cell { max-height: 25px; width: auto; display: block; margin: 0 auto; border-radius: 2px; }
         .hidden-col { display: none; }
         .text-center { text-align: center !important; }
-        .text-right { text-align: right !important; }
         #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
-        .lock-badge { font-size: 8px; color: #ffbc00; margin-left: 4px; }
     </style>
 </head>
 <body>
@@ -64,13 +65,16 @@
 <div id="dataModal" class="modal">
     <div class="modal-content">
         <h3 id="modalTitle" style="color:var(--neon); margin:0 0 15px 0; text-align:center; font-size:14px;">FORM DATA</h3>
-        <form id="dynamicForm" onsubmit="return false;"></form>
+        <form id="dynamicForm" onsubmit="return false;" autocomplete="off"></form>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-add" style="flex:2; padding:10px;" onclick="handleSave()">SIMPAN</button>
-            <button class="btn btn-home" style="flex:1" onclick="closeModal()">BATAL</button>
+            <button class="btn btn-add" style="flex:2; padding:10px; width: auto;" onclick="handleSave()">SIMPAN</button>
+            <button class="btn btn-home" style="flex:1; width: auto;" onclick="closeModal()">BATAL</button>
         </div>
     </div>
 </div>
+
+<datalist id="listSupplier"></datalist>
+<datalist id="listFish"></datalist>
 
 <header id="mainHeader">
     <h1>FISH APP-V3</h1>
@@ -128,19 +132,18 @@
 
 <section id="databaseSection">
     <div class="controls">
-        <button onclick="goHome()" class="btn btn-home">⬅ KEMBALI</button>
-        <button onclick="openModal('add')" class="btn btn-add">+ TAMBAH</button>
-        <button onclick="openModal('edit')" class="btn btn-edit">✎ EDIT</button>
-        <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol">⚙ KOLOM</button>
-        <div id="columnFilterPanel">
-            <div id="filterCheckboxes"></div>
-        </div>
-        <button onclick="resetWidths()" class="btn btn-reset">↺ RESET</button>
+        <button onclick="goHome()" class="btn btn-home" title="KEMBALI KE HOME"><i class="fas fa-home"></i></button>
+        <button onclick="openModal('add')" class="btn btn-add" title="TAMBAH DATA BARU"><i class="fas fa-plus"></i></button>
+        <button onclick="openModal('edit')" class="btn btn-edit" title="EDIT DATA TERPILIH"><i class="fas fa-pen"></i></button>
+        <button onclick="handleDelete()" class="btn btn-delete" title="HAPUS DATA TERPILIH"><i class="fas fa-trash-alt"></i></button> 
+        <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol" title="PENGATURAN KOLOM"><i class="fas fa-columns"></i></button>
+        <div id="columnFilterPanel"><div id="filterCheckboxes"></div></div>
+        <button onclick="resetWidths()" class="btn btn-reset" title="RESET LEBAR KOLOM"><i class="fas fa-sync-alt"></i></button>
         <span style="flex:1"></span>
         <span id="rowCounter"></span>
         <input type="search" id="searchInput" placeholder="Cari data...">
     </div>
-    <div class="table-wrapper" id="scrollWrapper">
+    <div class="table-wrapper" id="scrollWrapper" onscroll="handleTableScroll()">
         <div id="tableContainer"></div>
     </div>
 </section>
@@ -151,6 +154,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6JGVrt9KxCJhCuUG8a
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
 let filteredIndices = [], itemsToShow = 50, currentSheet = "", selectedRowIndex = null, searchQuery = "";
 let tableBody = null, colgroup = null, currentMode = "";
+let dbSupplier = [], dbMasterIkan = [];
 
 function showLoader(msg) { const l = document.getElementById('loader'); l.innerText = msg || '⚡ LOADING...'; l.style.display = 'block'; }
 function hideLoader() { document.getElementById('loader').style.display = 'none'; }
@@ -163,7 +167,28 @@ async function openSheet(sheetName) {
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('homePageContent').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
+    
+    // Selalu ambil dependensi jika masuk ke segmen yang butuh autofill
+    if(sheetName === "Harga Supplier" || sheetName === "Data Supplier") {
+        await fetchDependencies();
+    }
     await loadData(sheetName);
+}
+
+async function fetchDependencies() {
+    try {
+        const [resSup, resIkan] = await Promise.all([
+            fetch(`${SCRIPT_URL}?action=read&sheet=Data Supplier`),
+            fetch(`${SCRIPT_URL}?action=read&sheet=Master Data Ikan`)
+        ]);
+        const sData = await resSup.json();
+        const iData = await resIkan.json();
+        if(sData.status === 'success') dbSupplier = sData.data;
+        if(iData.status === 'success') dbMasterIkan = iData.data;
+
+        document.getElementById('listSupplier').innerHTML = dbSupplier.slice(1).map(row => `<option value="${row[1]}">`).join('');
+        document.getElementById('listFish').innerHTML = dbMasterIkan.slice(1).map(row => `<option value="${row[19]}">`).join(''); 
+    } catch(e) { console.error("Gagal ambil dependensi"); }
 }
 
 function goHome() { document.getElementById('mainHeader').style.display = 'block'; document.getElementById('homePageContent').style.display = 'flex'; document.getElementById('databaseSection').style.display = 'none'; }
@@ -175,22 +200,14 @@ async function loadData(sheet) {
         if (result.status === 'success') {
             rawData = result.data;
             headers = rawData[0];
-            
-            // ─── AMBIL CONFIG KOLOM DARI SPREADSHEET (KOLOM W / INDEKS 22) ───
-            // Jika baris ke-2 kolom W ada isinya, pakai itu. Jika tidak, tampilkan semua.
             const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
-            if (savedConfig) {
-                visibleColumns = savedConfig.split(',').map(Number);
-            } else {
-                visibleColumns = headers.map((_, i) => i);
-            }
-
+            visibleColumns = savedConfig ? savedConfig.split(',').map(Number) : headers.map((_, i) => i);
             computeWidths();
             createFilterCheckboxes();
             rebuildFilteredIndices();
             buildTable();
-        } else { alert('Gagal memuat data: ' + result.message); }
-    } catch(e) { alert('Gagal koneksi ke server.'); }
+        }
+    } catch(e) { alert('Gagal koneksi.'); }
     hideLoader();
 }
 
@@ -205,28 +222,21 @@ function rebuildFilteredIndices() {
 
 function updateRowCounter() { const shown = Math.min(itemsToShow, filteredIndices.length); document.getElementById('rowCounter').textContent = `${shown} / ${filteredIndices.length} baris`; }
 
-let _searchTimer = null;
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('searchInput').addEventListener('input', function() {
-        clearTimeout(_searchTimer);
-        _searchTimer = setTimeout(() => {
-            searchQuery = this.value;
-            rebuildFilteredIndices();
-            if (tableBody) tableBody.innerHTML = '';
-            itemsToShow = 50;
-            appendRows(0, itemsToShow);
+function handleTableScroll() {
+    const wrap = document.getElementById('scrollWrapper');
+    if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
+        if (itemsToShow < filteredIndices.length) {
+            const start = itemsToShow;
+            itemsToShow += 50;
+            appendRows(start, itemsToShow);
             updateRowCounter();
-        }, 200);
-    });
-    let ticking = false;
-    document.getElementById('scrollWrapper').addEventListener('scroll', () => {
-        if (!ticking) { requestAnimationFrame(() => { handleScroll(); ticking = false; }); ticking = true; }
-    }, { passive: true });
-});
+        }
+    }
+}
 
 function buildTable() {
     itemsToShow = 50;
-    const frag = document.createDocumentFragment();
+    const container = document.getElementById('tableContainer');
     const tbl = document.createElement('table');
     colgroup = document.createElement('colgroup');
     const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
@@ -240,57 +250,45 @@ function buildTable() {
     const hrow = document.createElement('tr');
     const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
     headers.forEach((h, i) => {
-        const th = document.createElement('th'); th.id = `th-${i}`; th.style.width = colWidths[i] + 'px';
+        const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
         if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-        th.textContent = h;
         const resizer = document.createElement('div'); resizer.className = 'resizer';
         resizer.addEventListener('mousedown', e => initResize(e, i));
         th.appendChild(resizer); hrow.appendChild(th);
     });
     thead.appendChild(hrow); tbl.appendChild(thead);
     tableBody = document.createElement('tbody'); tableBody.id = 'tableBody'; tbl.appendChild(tableBody);
-    frag.appendChild(tbl);
-    const container = document.getElementById('tableContainer'); container.innerHTML = ''; container.appendChild(frag);
+    container.innerHTML = ''; container.appendChild(tbl);
     appendRows(0, itemsToShow);
-    updateRowCounter();
 }
 
 function appendRows(fromIdx, toIdx) {
-    if (!tableBody) return;
-    const frag = document.createDocumentFragment();
     const limit = Math.min(filteredIndices.length, toIdx);
-    for (let fi = fromIdx; fi < limit; fi++) frag.appendChild(createRow(filteredIndices[fi]));
-    tableBody.appendChild(frag);
+    for (let fi = fromIdx; fi < limit; fi++) tableBody.appendChild(createRow(filteredIndices[fi]));
 }
 
 function createRow(r) {
-    const tr = document.createElement('tr'); tr.id = `tr-${r}`; tr.addEventListener('click', () => selectRow(r));
-    const tdSel = document.createElement('td'); tdSel.className = 'text-center';
-    const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.id = `rad-${r}`; radio.checked = (selectedRowIndex === r);
-    tdSel.appendChild(radio); tr.appendChild(tdSel);
+    const tr = document.createElement('tr'); tr.id = `tr-${r}`; tr.onclick = () => selectRow(r);
     if (selectedRowIndex === r) tr.classList.add('selected-row');
+    const tdSel = document.createElement('td'); tdSel.className = 'text-center';
+    const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === r);
+    tdSel.appendChild(radio); tr.appendChild(tdSel);
     rawData[r].forEach((cell, idx) => {
         const td = document.createElement('td');
         if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
-        if (idx === 0 || (idx >= 19 && idx <= 21)) td.classList.add('text-center');
         const val = cell != null ? String(cell) : '';
-        const trimmed = val.trim();
-        if (trimmed !== '') {
-            const imgUrl = toDisplayableImgUrl(trimmed);
-            if (imgUrl) {
-                const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell'; img.loading = 'lazy';
-                img.referrerPolicy = 'no-referrer'; img.onerror = function() { this.outerHTML = '<span style="color:#f44;font-size:9px">❌</span>'; };
-                td.appendChild(img);
-            } else td.textContent = val;
-        }
+        const imgUrl = toDisplayableImgUrl(val);
+        if (imgUrl) {
+            const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
+            td.appendChild(img);
+        } else td.textContent = val;
         tr.appendChild(td);
     });
     return tr;
 }
 
 function toDisplayableImgUrl(url) {
-    if (!url.startsWith('http')) return null;
-    if (url.includes('googleusercontent.com') || url.includes('drive.google.com/thumbnail')) return url;
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) return null;
     const ucMatch = url.match(/[?&]id=([\w-]+)/);
     if (url.includes('drive.google.com') && ucMatch) return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=s80`;
     if (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
@@ -301,43 +299,15 @@ function selectRow(index) {
     if (selectedRowIndex !== null) document.getElementById(`tr-${selectedRowIndex}`)?.classList.remove('selected-row');
     selectedRowIndex = index;
     const tr = document.getElementById(`tr-${index}`);
-    if (tr) { tr.classList.add('selected-row'); const rad = document.getElementById(`rad-${index}`); if (rad) rad.checked = true; }
+    if (tr) { tr.classList.add('selected-row'); tr.querySelector('input').checked = true; }
 }
 
 function initResize(e, i) {
     e.stopPropagation();
     const startX = e.pageX, startWidth = colWidths[i];
-    const col = document.getElementById(`col-${i}`), th = document.getElementById(`th-${i}`);
-    const doResize = m => { const nW = Math.max(20, startWidth + (m.pageX - startX)); colWidths[i] = nW; col.style.width = nW + 'px'; th.style.width = nW + 'px'; };
+    const doResize = m => { const nW = Math.max(20, startWidth + (m.pageX - startX)); colWidths[i] = nW; document.getElementById(`col-${i}`).style.width = nW + 'px'; };
     const stop = () => { document.removeEventListener('mousemove', doResize); document.removeEventListener('mouseup', stop); };
     document.addEventListener('mousemove', doResize); document.addEventListener('mouseup', stop);
-}
-
-// ─── FUNGSI BARU: SIMPAN VISIBILITAS KE DATABASE (GLOBAL) ───
-async function saveColumnVisibility() {
-    const configString = visibleColumns.sort((a, b) => a - b).join(',');
-    try {
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'saveConfig',
-                sheet: currentSheet,
-                config: configString
-            })
-        });
-    } catch(e) { console.error('Gagal simpan config kolom'); }
-}
-
-function toggleCol(i, show) {
-    if (show) { if (!visibleColumns.includes(i)) visibleColumns.push(i); } 
-    else { visibleColumns = visibleColumns.filter(x => x !== i); }
-    
-    const col = document.getElementById(`col-${i}`), th = document.getElementById(`th-${i}`);
-    if (col) col.style.display = show ? '' : 'none'; if (th) th.classList.toggle('hidden-col', !show);
-    document.querySelectorAll(`#tableBody tr td:nth-child(${i + 2})`).forEach(td => td.classList.toggle('hidden-col', !show));
-    
-    // Simpan setiap kali ada perubahan checkbox
-    saveColumnVisibility();
 }
 
 function toggleFilterPanel(event) { event.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
@@ -347,119 +317,138 @@ function createFilterCheckboxes() {
     headers.forEach((h, i) => {
         const lbl = document.createElement('label'); lbl.className = 'filter-item';
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = visibleColumns.includes(i);
-        cb.addEventListener('change', () => toggleCol(i, cb.checked)); lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
+        cb.onchange = () => {
+            if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } else { visibleColumns = visibleColumns.filter(x=>x!==i); }
+            loadData(currentSheet);
+        };
+        lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
     });
 }
 
-function resetWidths() { visibleColumns = headers.map((_, i) => i); saveColumnVisibility(); createFilterCheckboxes(); buildTable(); }
+function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); }
 
-function handleScroll() {
-    const w = document.getElementById('scrollWrapper');
-    if (w.scrollTop + w.clientHeight >= w.scrollHeight - 100) {
-        if (itemsToShow < filteredIndices.length) {
-            const start = itemsToShow; itemsToShow = Math.min(itemsToShow + 50, filteredIndices.length);
-            appendRows(start, itemsToShow); updateRowCounter();
+function handleAutofillLogic(i, val) {
+    // LOGIC HARGA SUPPLIER
+    if (currentSheet === "Harga Supplier") {
+        if (i === 1) { // Nama Supplier -> ID
+            const match = dbSupplier.find(row => row[1] === val);
+            if (match) { document.getElementById('field-text-0').value = match[0]; document.getElementById('field-0').value = match[0]; }
+            else if (!val) { document.getElementById('field-text-0').value = ""; document.getElementById('field-0').value = ""; }
+        }
+        if (i === 3) { // Local Name -> Code IT, Size, Approx
+            const match = dbMasterIkan.find(row => row[19] === val); 
+            if (match) {
+                document.getElementById('field-text-2').value = match[3]; document.getElementById('field-2').value = match[3];
+                document.getElementById('field-text-4').value = match[9]; document.getElementById('field-4').value = match[9];
+                document.getElementById('field-text-5').value = match[10]; document.getElementById('field-5').value = match[10];
+            } else if (!val) {
+                [2, 4, 5].forEach(idx => { document.getElementById('field-text-' + idx).value = ""; document.getElementById('field-' + idx).value = ""; });
+            }
         }
     }
 }
 
-function updateNamaLokal() {
-    const valI = document.getElementById('field-text-8') ? document.getElementById('field-text-8').value.trim() : "";
-    const valJ = document.getElementById('field-text-9') ? document.getElementById('field-text-9').value.trim() : "";
-    const targetTextT = document.getElementById('field-text-19');
-    const targetHiddenT = document.getElementById('field-19');
-    const hasilGabung = (valI || valJ) ? (valI + " " + valJ).trim() : "";
-    if (targetTextT) targetTextT.value = hasilGabung;
-    if (targetHiddenT) targetHiddenT.value = hasilGabung;
-}
-
 function openModal(mode) {
-    if (mode === 'edit' && selectedRowIndex === null) { alert("Pilih data pada tabel terlebih dahulu!"); return; }
+    if (mode === 'edit' && selectedRowIndex === null) { alert("Pilih data!"); return; }
     currentMode = mode;
     const form = document.getElementById('dynamicForm'); form.innerHTML = '';
-    document.getElementById('modalTitle').innerText = (mode === 'add' ? `TAMBAH : ${currentSheet}` : `EDIT : ${currentSheet}`);
+    document.getElementById('modalTitle').innerText = `${mode === 'add' ? 'TAMBAH' : 'EDIT'} : ${currentSheet}`;
+    
+    // Logic ID Supplier Otomatis (Tahun + Nomor Baris)
+    let autoSupplierID = "";
+    if (mode === 'add' && currentSheet === "Data Supplier") {
+        const year = new Date().getFullYear();
+        const rowNum = rawData.length; // Karena row 0 header, data terakhir di rawData.length-1, data baru di rawData.length
+        autoSupplierID = year + String(rowNum).padStart(2, '0');
+    }
+
     headers.forEach((h, i) => {
-        const val = mode === 'edit' ? String(rawData[selectedRowIndex][i] ?? '') : '';
-        const isImg = h.toLowerCase().includes('image') || h.toLowerCase().includes('foto');
-        const isLocalName = (i === 8); const isSize = (i === 9); const isNamaLokal = (i === 19);
+        let val = mode === 'edit' ? String(rawData[selectedRowIndex][i] ?? '') : '';
+        
+        // Pasang Auto ID jika menambah Data Supplier
+        if (mode === 'add' && currentSheet === "Data Supplier" && i === 0) val = autoSupplierID;
+
         const group = document.createElement('div'); group.className = 'form-group';
-        const label = document.createElement('label');
-        label.innerHTML = h + (isNamaLokal ? ' <span class="lock-badge">🔒 AUTO-COMBINE</span>' : '');
-        group.appendChild(label);
-        const hiddenInp = document.createElement('input'); hiddenInp.type = 'hidden'; hiddenInp.id = `field-${i}`; hiddenInp.value = val;
-        group.appendChild(hiddenInp);
+        const isImg = h.toUpperCase().includes("FOTO") || h.toUpperCase().includes("IMAGE") || h.toUpperCase().includes("GAMBAR");
+        
+        let isLocked = false, useDatalist = "";
+        
+        // Aturan Lock & Datalist Spesifik
+        if (currentSheet === "Harga Supplier") {
+            if ([0, 2, 4, 5].includes(i)) isLocked = true; 
+            if (i === 1) useDatalist = "listSupplier"; 
+            if (i === 3) useDatalist = "listFish"; 
+        } else if (currentSheet === "Data Supplier") {
+            if (i === 0) isLocked = true; // ID Supplier Selalu Lock
+        }
+
         if (isImg) {
-            const fileInp = document.createElement('input'); fileInp.type = 'file'; fileInp.accept = 'image/*';
-            fileInp.addEventListener('change', () => uploadToDrive(fileInp, i)); group.appendChild(fileInp);
-            const prev = document.createElement('img'); prev.id = `prev-${i}`; prev.className = 'img-preview';
-            const displayUrl = toDisplayableImgUrl(val); if (displayUrl) { prev.src = displayUrl; prev.style.display = 'block'; }
-            group.appendChild(prev);
+            group.innerHTML = `<label>${h}</label>
+                <input type="hidden" id="field-${i}" value="${val}">
+                <input type="file" accept="image/*" onchange="uploadFile(this, ${i})">
+                <img id="prev-${i}" src="${toDisplayableImgUrl(val) || ''}" class="img-preview" style="display:${val?'block':'none'}">`;
         } else {
-            const inp = document.createElement('input'); inp.type = 'text'; inp.id = `field-text-${i}`; inp.value = val;
-            if (isNamaLokal) { inp.readOnly = true; inp.className = 'locked'; }
-            inp.addEventListener('input', () => { hiddenInp.value = inp.value; if (isLocalName || isSize) updateNamaLokal(); });
-            group.appendChild(inp);
+            group.innerHTML = `<label>${h} ${isLocked ? '🔒' : ''}</label>
+                <input type="hidden" id="field-${i}" value="${val}">
+                <input type="text" id="field-text-${i}" value="${val}" list="${useDatalist}"
+                       ${isLocked ? 'readonly class="locked"' : ''}
+                       autocomplete="one-time-code"
+                       onclick="${useDatalist ? "this.value=''; handleAutofillLogic("+i+", '')" : ""}"
+                       oninput="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)"
+                       onchange="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)">`;
         }
         form.appendChild(group);
     });
-    if (mode === 'edit') updateNamaLokal();
     document.getElementById('dataModal').style.display = 'block';
 }
 
-function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
-
-async function uploadToDrive(input, colIndex) {
+function uploadFile(input, idx) {
     const file = input.files[0]; if (!file) return;
-    const namaLokalField = document.getElementById('field-text-19');
-    let namaLokal = namaLokalField ? namaLokalField.value.trim() : '';
-    if (!namaLokal) { alert("Nama Lokal (Kolom T) kosong!"); input.value = ''; return; }
-    const cleanName = namaLokal.replace(/[/\\?%*:|"<>]/g, '-');
-    const ext = file.name.split('.').pop();
-    const fileName = `${cleanName}.${ext}`;
-    showLoader('⚡ UPLOADING: ' + fileName);
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = function(e) {
         const base64 = e.target.result.split(',')[1];
-        try {
-            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'upload', fileData: base64, fileName: fileName, fileMime: file.type }) });
-            const result = await res.json();
-            if (result.status === 'success') {
-                document.getElementById(`field-${colIndex}`).value = result.url;
-                const prev = document.getElementById(`prev-${colIndex}`);
-                if (prev) { prev.src = toDisplayableImgUrl(result.url) || result.url; prev.style.display = 'block'; }
-                alert('✅ Upload Berhasil!');
-            } else alert('Gagal: ' + result.message);
-        } catch(err) { alert('Gagal Upload ke Server.'); }
-        finally { hideLoader(); }
+        showLoader('⚡ UPLOADING IMAGE...');
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'upload', filename: file.name, mimeType: file.type, data: base64 }) })
+        .then(res => res.json()).then(res => {
+            if (res.status === 'success') {
+                document.getElementById('field-' + idx).value = res.url;
+                const prev = document.getElementById('prev-' + idx); prev.src = res.url; prev.style.display = 'block';
+            }
+        }).finally(() => hideLoader());
     };
     reader.readAsDataURL(file);
 }
 
+function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
+
 async function handleSave() {
-    const formFields = headers.map((_, i) => { const hid = document.getElementById(`field-${i}`); return hid ? hid.value : ''; });
-    const namaLokalTerbaru = document.getElementById('field-text-19') ? document.getElementById('field-text-19').value : "";
-    formFields[19] = namaLokalTerbaru;
+    const dataSave = headers.map((_, i) => document.getElementById(`field-${i}`).value);
     showLoader('⚡ MENYIMPAN...');
     try {
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: selectedRowIndex, data: formFields }) });
-        const result = await res.json();
-        if (result.status === 'success') {
-            if (currentMode === 'edit') {
-                rawData[selectedRowIndex] = formFields;
-                const oldTr = document.getElementById(`tr-${selectedRowIndex}`); if (oldTr) oldTr.replaceWith(createRow(selectedRowIndex));
-            } else {
-                rawData.push(formFields); rebuildFilteredIndices(); buildTable();
-            }
-            closeModal(); alert('✅ Data Berhasil Disimpan!');
-        } else alert('Error: ' + result.message);
-    } catch(e) { alert('Gagal koneksi saat simpan.'); }
-    finally { hideLoader(); }
+        const res = await fetch(SCRIPT_URL, { 
+            method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: selectedRowIndex, data: dataSave }) 
+        });
+        if ((await res.json()).status === 'success') { await loadData(currentSheet); closeModal(); alert('Data Tersimpan!'); }
+    } catch(e) { alert('Gagal simpan.'); } finally { hideLoader(); }
 }
 
-window.addEventListener('click', e => {
-    const panel = document.getElementById('columnFilterPanel'); const btn = document.getElementById('btnFilterCol');
-    if (panel?.style.display === 'block' && !panel.contains(e.target) && e.target !== btn) panel.style.display = 'none';
-});
+async function handleDelete() {
+    if (selectedRowIndex === null || !confirm("Hapus data?")) return;
+    showLoader();
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', sheet: currentSheet, rowIndex: selectedRowIndex }) });
+        if ((await res.json()).status === 'success') { await loadData(currentSheet); selectedRowIndex = null; }
+    } catch(e) { alert('Gagal hapus.'); } finally { hideLoader(); }
+}
+
+document.getElementById('searchInput').oninput = function() {
+    searchQuery = this.value; rebuildFilteredIndices(); tableBody.innerHTML = ''; itemsToShow = 50; appendRows(0, itemsToShow);
+};
+
+window.onclick = e => {
+    const p = document.getElementById('columnFilterPanel');
+    if (p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
+};
 </script>
 </body>
 </html>
