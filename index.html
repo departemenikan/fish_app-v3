@@ -168,7 +168,6 @@ async function openSheet(sheetName) {
     document.getElementById('homePageContent').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
     
-    // Selalu ambil dependensi jika masuk ke segmen yang butuh autofill
     if(sheetName === "Harga Supplier" || sheetName === "Data Supplier") {
         await fetchDependencies();
     }
@@ -328,14 +327,13 @@ function createFilterCheckboxes() {
 function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); }
 
 function handleAutofillLogic(i, val) {
-    // LOGIC HARGA SUPPLIER
     if (currentSheet === "Harga Supplier") {
-        if (i === 1) { // Nama Supplier -> ID
+        if (i === 1) { 
             const match = dbSupplier.find(row => row[1] === val);
             if (match) { document.getElementById('field-text-0').value = match[0]; document.getElementById('field-0').value = match[0]; }
             else if (!val) { document.getElementById('field-text-0').value = ""; document.getElementById('field-0').value = ""; }
         }
-        if (i === 3) { // Local Name -> Code IT, Size, Approx
+        if (i === 3) {
             const match = dbMasterIkan.find(row => row[19] === val); 
             if (match) {
                 document.getElementById('field-text-2').value = match[3]; document.getElementById('field-2').value = match[3];
@@ -348,24 +346,30 @@ function handleAutofillLogic(i, val) {
     }
 }
 
+// Fungsi pembantu agar datalist langsung muncul saat input mendapatkan fokus
+function showDatalist(elm) {
+    setTimeout(() => {
+        elm.dispatchEvent(new Event('input', { bubbles: true }));
+        if (elm.list) {
+            elm.focus();
+        }
+    }, 10);
+}
+
 function openModal(mode) {
     if (mode === 'edit' && selectedRowIndex === null) { alert("Pilih data!"); return; }
     currentMode = mode;
     const form = document.getElementById('dynamicForm'); form.innerHTML = '';
     document.getElementById('modalTitle').innerText = `${mode === 'add' ? 'TAMBAH' : 'EDIT'} : ${currentSheet}`;
     
-    // Logic ID Supplier Otomatis (Tahun + Nomor Baris)
     let autoSupplierID = "";
     if (mode === 'add' && currentSheet === "Data Supplier") {
         const year = new Date().getFullYear();
-        const rowNum = rawData.length; // Karena row 0 header, data terakhir di rawData.length-1, data baru di rawData.length
-        autoSupplierID = year + String(rowNum).padStart(2, '0');
+        autoSupplierID = year + String(rawData.length).padStart(2, '0');
     }
 
     headers.forEach((h, i) => {
         let val = mode === 'edit' ? String(rawData[selectedRowIndex][i] ?? '') : '';
-        
-        // Pasang Auto ID jika menambah Data Supplier
         if (mode === 'add' && currentSheet === "Data Supplier" && i === 0) val = autoSupplierID;
 
         const group = document.createElement('div'); group.className = 'form-group';
@@ -373,13 +377,12 @@ function openModal(mode) {
         
         let isLocked = false, useDatalist = "";
         
-        // Aturan Lock & Datalist Spesifik
         if (currentSheet === "Harga Supplier") {
             if ([0, 2, 4, 5].includes(i)) isLocked = true; 
             if (i === 1) useDatalist = "listSupplier"; 
             if (i === 3) useDatalist = "listFish"; 
         } else if (currentSheet === "Data Supplier") {
-            if (i === 0) isLocked = true; // ID Supplier Selalu Lock
+            if (i === 0) isLocked = true; 
         }
 
         if (isImg) {
@@ -388,12 +391,13 @@ function openModal(mode) {
                 <input type="file" accept="image/*" onchange="uploadFile(this, ${i})">
                 <img id="prev-${i}" src="${toDisplayableImgUrl(val) || ''}" class="img-preview" style="display:${val?'block':'none'}">`;
         } else {
+            // Bagian ini diperbarui untuk menangani fokus datalist secara instan
             group.innerHTML = `<label>${h} ${isLocked ? '🔒' : ''}</label>
                 <input type="hidden" id="field-${i}" value="${val}">
                 <input type="text" id="field-text-${i}" value="${val}" list="${useDatalist}"
                        ${isLocked ? 'readonly class="locked"' : ''}
-                       autocomplete="one-time-code"
-                       onclick="${useDatalist ? "this.value=''; handleAutofillLogic("+i+", '')" : ""}"
+                       autocomplete="off"
+                       onfocus="${useDatalist ? "this.value=''; handleAutofillLogic("+i+", ''); showDatalist(this)" : ""}"
                        oninput="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)"
                        onchange="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)">`;
         }
@@ -422,14 +426,35 @@ function uploadFile(input, idx) {
 function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
 
 async function handleSave() {
-    const dataSave = headers.map((_, i) => document.getElementById(`field-${i}`).value);
-    showLoader('⚡ MENYIMPAN...');
+    const dataSave = headers.map((_, i) => {
+        const el = document.getElementById(`field-${i}`);
+        return el ? el.value : "";
+    });
+
+    if (currentSheet === "Data Supplier" && dataSave[0] === "") {
+        alert("ID Supplier kosong! Harap ulangi."); return;
+    }
+
+    showLoader('⚡ MENGIRIM DATA KE SPREADSHEET...');
     try {
         const res = await fetch(SCRIPT_URL, { 
-            method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: selectedRowIndex, data: dataSave }) 
+            method: 'POST', 
+            body: JSON.stringify({ 
+                action: 'save', 
+                sheet: currentSheet, 
+                rowIndex: currentMode === 'edit' ? selectedRowIndex : null, 
+                data: dataSave 
+            }) 
         });
-        if ((await res.json()).status === 'success') { await loadData(currentSheet); closeModal(); alert('Data Tersimpan!'); }
-    } catch(e) { alert('Gagal simpan.'); } finally { hideLoader(); }
+        const result = await res.json();
+        if (result.status === 'success') { 
+            alert('Data Berhasil Tersimpan di Spreadsheet!'); 
+            await loadData(currentSheet); 
+            closeModal(); 
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch(e) { alert('Gagal koneksi ke Back-end.'); } finally { hideLoader(); }
 }
 
 async function handleDelete() {
