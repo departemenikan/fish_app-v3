@@ -11,7 +11,9 @@
     <style>
         :root { --neon: #00d2ff; --bg: #0b0b0b; --accent: #ff4444; --green: #00ff88; }
         *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #efefef; margin: 0; padding: 0; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #efefef; margin: 0; padding: 0; overflow-x: hidden; touch-action: manipulation; }
+        
+        /* Header & Nav */
         header { text-align: center; padding: 15px 10px; background: #000; border-bottom: 1px solid #222; }
         h1 { font-size: 26px; letter-spacing: 3px; color: #fff; margin: 0; text-shadow: 0 0 10px var(--neon); }
         .subtitle { color: var(--neon); font-size: 9px; margin-bottom: 12px; letter-spacing: 1px; }
@@ -22,73 +24,72 @@
         .dropdown-content a { color: #ccc; padding: 8px 12px; text-decoration: none; display: block; border-bottom: 1px solid #222; font-size: 10px; }
         .dropdown-content a:hover { background: var(--neon); color: #000; }
         .dropdown:hover .dropdown-content { display: block; }
+
+        /* Dashboard & Layout */
+        #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
+        .controls { display: flex; gap: 8px; align-items: center; padding: 6px 15px; background: #080808; border-bottom: 1px solid #222; flex-wrap: wrap; }
+        .btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; color: white; transition: all 0.2s ease; }
+        
+        /* FEATURE: RESIZABLE SIDEBAR */
+        .database-layout { display: flex; height: calc(100vh - 130px); overflow: hidden; position: relative; }
+        .side-list { width: 180px; min-width: 50px; border-right: 1px solid #222; overflow-y: auto; background: #050505; }
+        .side-detail { flex: 1; overflow: auto; background: #000; position: relative; }
+        
+        /* Garis Pemisah (Resizer) */
+        .sidebar-resizer {
+            width: 6px;
+            cursor: col-resize;
+            background: #1a1a1a;
+            position: relative;
+            z-index: 20;
+            transition: background 0.3s;
+        }
+        .sidebar-resizer:hover, .sidebar-resizer:active { background: var(--neon); }
+
+        /* List & Table Style */
+        .supplier-card { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; cursor: pointer; font-size: 10px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .supplier-card:hover { background: #111; color: var(--neon); }
+        .supplier-card.active { background: #111; color: var(--neon); border-left: 3px solid var(--neon); font-weight: bold; }
+        .all-card { color: var(--green); border-bottom: 2px solid #222; font-weight: bold; }
+
+        table { border-collapse: collapse; table-layout: fixed; width: max-content; }
+        th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
+        td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        
+        /* Column Resizer */
+        .resizer { position: absolute; right: 0; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 11; }
+        .resizer:hover { background: var(--neon); opacity: 0.5; }
+
+        tr.selected-row { background: rgba(0, 210, 255, 0.15) !important; }
+        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; }
+        
+        /* Home Logo */
         #homePageContent { height: calc(100vh - 105px); width: 100%; display: flex; justify-content: center; align-items: flex-start; background: #000; overflow: hidden; }
         .home-logo { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-        .controls { display: flex; gap: 8px; align-items: center; padding: 6px 15px; background: #080808; border-bottom: 1px solid #222; position: relative; flex-wrap: wrap; }
-        .btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; color: white; transition: all 0.2s ease; position: relative; }
-        .btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+
+        /* Buttons color */
         .btn-home { background: var(--accent); }
         .btn-add { background: var(--green); color: #000; }
         .btn-edit { background: var(--neon); color: #000; }
         .btn-delete { background: #ff1111; color: white; }
         .btn-col { background: #222; border: 1px solid var(--neon); color: var(--neon); }
         .btn-reset { background: #1a1a1a; border: 1px solid #444; color: #888; }
-        #columnFilterPanel { display: none; position: absolute; top: 45px; left: 15px; background: #111; border: 1px solid var(--neon); padding: 10px; border-radius: 4px; box-shadow: 5px 5px 20px rgba(0,0,0,0.9); z-index: 1000; width: 280px; max-height: 450px; overflow-y: auto; }
-        .filter-item { font-size: 11px; color: #ccc; display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 8px; border-radius: 3px; border-bottom: 1px solid #222; }
-        .filter-item:hover { background: #222; color: var(--neon); }
-        .filter-item input { accent-color: var(--neon); cursor: pointer; }
-        #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
-        #searchInput { width: 180px; padding: 6px 10px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
-        #rowCounter { font-size: 10px; color: #777; white-space: nowrap; margin-right: 10px; }
         
-        /* NEW LAYOUT FOR DASHBOARD MODE */
-        .database-layout { display: flex; height: calc(100vh - 130px); overflow: hidden; }
-        .side-list { width: 220px; border-right: 1px solid #222; overflow-y: auto; background: #050505; }
-        .side-detail { flex: 1; overflow: auto; background: #000; position: relative; }
-        .supplier-card { padding: 12px 15px; border-bottom: 1px solid #1a1a1a; cursor: pointer; font-size: 11px; color: #888; transition: 0.2s; }
-        .supplier-card:hover { background: #111; color: var(--neon); }
-        .supplier-card.active { background: #111; color: var(--neon); border-left: 3px solid var(--neon); font-weight: bold; }
+        /* Search */
+        #searchInput { width: 150px; padding: 6px 10px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
+        #rowCounter { font-size: 10px; color: #777; margin-right: 10px; }
         
-        /* Special Style for ALL button */
-        .all-card { color: var(--green); border-bottom: 2px solid #222; font-weight: bold; }
-
-        .table-wrapper { overflow: auto; height: calc(100vh - 130px); width: 100%; position: relative; }
-        table { border-collapse: collapse; table-layout: fixed; width: max-content; }
-        th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
-        td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-        .resizer { position: absolute; right: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 11; }
-        .resizer:hover { background: var(--neon); }
-        tr.selected-row { background: rgba(0, 210, 255, 0.15) !important; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; backdrop-filter: blur(4px); }
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; }
         .modal-content { background: #111; border: 1px solid var(--neon); width: 90%; max-width: 450px; margin: 20px auto; padding: 25px; border-radius: 8px; max-height: 85vh; overflow-y: auto; }
         .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 10px; color: var(--neon); margin-bottom: 4px; text-transform: uppercase; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; font-size: 11px; }
-        .form-group input.locked { background: #1a1a1a; color: #888; border: 1px solid #222; }
-        .img-preview { max-width: 150px; margin-top: 5px; border: 1px solid var(--neon); display: none; }
-        .img-cell { max-height: 25px; width: auto; display: block; margin: 0 auto; border-radius: 2px; }
-        .hidden-col { display: none; }
-        .text-center { text-align: center !important; }
-        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
+        .form-group label { display: block; font-size: 10px; color: var(--neon); margin-bottom: 4px; }
+        .form-group input { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; font-size: 11px; }
     </style>
 </head>
 <body>
 
 <div id="loader">⚡ LOADING...</div>
-
-<div id="dataModal" class="modal">
-    <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--neon); margin:0 0 15px 0; text-align:center; font-size:14px;">FORM DATA</h3>
-        <form id="dynamicForm" onsubmit="return false;" autocomplete="off"></form>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-add" style="flex:2; padding:10px; width: auto;" onclick="handleSave()">SIMPAN</button>
-            <button class="btn btn-home" style="flex:1; width: auto;" onclick="closeModal()">BATAL</button>
-        </div>
-    </div>
-</div>
-
-<datalist id="listSupplier"></datalist>
-<datalist id="listFish"></datalist>
 
 <header id="mainHeader">
     <h1>FISH APP-V3</h1>
@@ -104,106 +105,56 @@
                 <a href="#" onclick="openSheet('Master Data Ikan')">Master Data Ikan</a>
             </div>
         </div>
-        <div class="dropdown">
-            <button class="dropbtn">🚢 PEMBELIAN ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Nota')">Nota</a>
-                <a href="#" onclick="openSheet('Pembelian Ikan')">Pembelian Ikan</a>
-                <a href="#" onclick="openSheet('Stok List Wild')">Stok List Wild</a>
-                <a href="#" onclick="openSheet('Stok List Culture')">Stok List Culture</a>
-                <a href="#" onclick="openSheet('Stok List')">Stok List</a>
-            </div>
-        </div>
-        <div class="dropdown">
-            <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Tgl Order')">Tgl Order</a>
-                <a href="#" onclick="openSheet('Order')">Order</a>
-                <a href="#" onclick="openSheet('Invoice')">Invoice</a>
-                <a href="#" onclick="openSheet('Box')">Box</a>
-                <a href="#" onclick="openSheet('Pengiriman Ikan')">Pengiriman Ikan</a>
-                <a href="#" onclick="openSheet('Dead On Arrival')">Dead On Arrival</a>
-                <a href="#" onclick="openSheet('List Packing')">List Packing</a>
-            </div>
-        </div>
-        <div class="dropdown">
-            <button class="dropbtn">📊 STOK ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Opname')">Opname</a>
-                <a href="#" onclick="openSheet('Kematian')">Kematian</a>
-                <a href="#" onclick="openSheet('Kerusakan')">Kerusakan</a>
-                <a href="#" onclick="openSheet('Rekap Stok')">Rekap Stok</a>
-                <a href="#" onclick="openSheet('Laporan Stok')">Laporan Stok</a>
-            </div>
-        </div>
+        <div class="dropdown"><button class="dropbtn">🚢 PEMBELIAN ▾</button></div>
+        <div class="dropdown"><button class="dropbtn">✈️ PENGIRIMAN ▾</button></div>
+        <div class="dropdown"><button class="dropbtn">📊 STOK ▾</button></div>
     </div>
 </header>
 
 <section id="homePageContent">
-    <img src="Home_Image.png" alt="Fish App Logo" class="home-logo" loading="lazy">
+    <img src="Home_Image.png" alt="Fish App Logo" class="home-logo">
 </section>
 
 <section id="databaseSection">
     <div class="controls">
-        <button onclick="goHome()" class="btn btn-home" title="KEMBALI KE HOME"><i class="fas fa-home"></i></button>
-        <button onclick="openModal('add')" class="btn btn-add" title="TAMBAH DATA BARU"><i class="fas fa-plus"></i></button>
-        <button onclick="openModal('edit')" class="btn btn-edit" title="EDIT DATA TERPILIH"><i class="fas fa-pen"></i></button>
-        <button onclick="handleDelete()" class="btn btn-delete" title="HAPUS DATA TERPILIH"><i class="fas fa-trash-alt"></i></button> 
-        <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol" title="PENGATURAN KOLOM"><i class="fas fa-columns"></i></button>
-        <div id="columnFilterPanel"><div id="filterCheckboxes"></div></div>
-        <button onclick="resetWidths()" class="btn btn-reset" title="RESET LEBAR KOLOM"><i class="fas fa-sync-alt"></i></button>
+        <button onclick="goHome()" class="btn btn-home"><i class="fas fa-home"></i></button>
+        <button onclick="openModal('add')" class="btn btn-add"><i class="fas fa-plus"></i></button>
+        <button onclick="openModal('edit')" class="btn btn-edit"><i class="fas fa-pen"></i></button>
+        <button onclick="handleDelete()" class="btn btn-delete"><i class="fas fa-trash-alt"></i></button> 
+        <button onclick="resetWidths()" class="btn btn-reset" title="Reset View"><i class="fas fa-sync-alt"></i></button>
         <span style="flex:1"></span>
         <span id="rowCounter"></span>
-        <input type="search" id="searchInput" placeholder="Cari data...">
+        <input type="search" id="searchInput" placeholder="Cari...">
     </div>
-    <div id="mainTableArea">
-        <div id="tableContainer"></div>
-    </div>
+    
+    <div id="tableContainer"></div>
 </section>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfCYQJGcR7IUY6QvnnCKritz0MTqKTgYfFd63jcznQhktCEUmg1jjnGbvcsSId661Q1A/exec";
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
-let filteredIndices = [], itemsToShow = 30, currentSheet = "", selectedRowIndex = null, searchQuery = "";
-let tableBody = null, colgroup = null, currentMode = "";
-let dbSupplier = [], dbMasterIkan = [];
+let filteredIndices = [], currentSheet = "", selectedRowIndex = null, searchQuery = "";
+let sidebarWidth = 160; // Default sidebar width
 
-function showLoader(msg) { const l = document.getElementById('loader'); l.innerText = msg || '⚡ LOADING...'; l.style.display = 'block'; }
+function showLoader() { document.getElementById('loader').style.display = 'block'; }
 function hideLoader() { document.getElementById('loader').style.display = 'none'; }
 
 async function openSheet(sheetName) {
     currentSheet = sheetName;
     selectedRowIndex = null;
-    document.getElementById('tableContainer').innerHTML = '';
     showLoader();
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('homePageContent').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
-    
-    if(sheetName === "Harga Supplier" || sheetName === "Data Supplier") {
-        await fetchDependencies();
-    }
     await loadData(sheetName);
 }
 
-async function fetchDependencies() {
-    try {
-        const [resSup, resIkan] = await Promise.all([
-            fetch(`${SCRIPT_URL}?action=read&sheet=Data Supplier`),
-            fetch(`${SCRIPT_URL}?action=read&sheet=Master Data Ikan`)
-        ]);
-        const sData = await resSup.json();
-        const iData = await resIkan.json();
-        if(sData.status === 'success') dbSupplier = sData.data;
-        if(iData.status === 'success') dbMasterIkan = iData.data;
-
-        document.getElementById('listSupplier').innerHTML = dbSupplier.slice(1).map(row => `<option value="${row[1]}">`).join('');
-        document.getElementById('listFish').innerHTML = dbMasterIkan.slice(1).map(row => `<option value="${row[19]}">`).join(''); 
-    } catch(e) { console.error("Gagal ambil dependensi"); }
+function goHome() { 
+    document.getElementById('mainHeader').style.display = 'block'; 
+    document.getElementById('homePageContent').style.display = 'flex'; 
+    document.getElementById('databaseSection').style.display = 'none'; 
 }
-
-function goHome() { document.getElementById('mainHeader').style.display = 'block'; document.getElementById('homePageContent').style.display = 'flex'; document.getElementById('databaseSection').style.display = 'none'; }
 
 async function loadData(sheet) {
     try {
@@ -212,391 +163,224 @@ async function loadData(sheet) {
         if (result.status === 'success') {
             rawData = result.data;
             headers = rawData[0];
-
-            if (sheet === "Harga Supplier") {
-                const headerRow = rawData[0];
-                const bodyRows = rawData.slice(1);
-                bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-                rawData = [headerRow, ...bodyRows];
-            }
-
-            const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
-            visibleColumns = savedConfig ? savedConfig.split(',').map(Number) : headers.map((_, i) => i);
-            computeWidths();
-            createFilterCheckboxes();
+            visibleColumns = headers.map((_, i) => i);
+            computeDefaultWidths();
             rebuildFilteredIndices();
-            buildTable();
+            buildLayout();
         }
-    } catch(e) { alert('Gagal koneksi.'); }
+    } catch(e) { alert('Gagal memuat data.'); }
     hideLoader();
 }
 
-function computeWidths() { colWidths = headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200)); }
+function computeDefaultWidths() {
+    colWidths = headers.map(h => 100); // Default 100px per kolom
+}
 
 function rebuildFilteredIndices() {
     const q = searchQuery.toLowerCase();
     filteredIndices = [];
-    for (let r = 1; r < rawData.length; r++) { if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r); }
-    updateRowCounter();
+    for (let r = 1; r < rawData.length; r++) {
+        if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r);
+    }
+    document.getElementById('rowCounter').textContent = filteredIndices.length + " baris";
 }
 
-function updateRowCounter() { const shown = filteredIndices.length; document.getElementById('rowCounter').textContent = `${shown} baris ditemukan`; }
-
-function buildTable() {
+function buildLayout() {
     const container = document.getElementById('tableContainer');
     container.innerHTML = '';
 
-    if (currentSheet === "Harga Supplier") {
-        const layout = document.createElement('div');
-        layout.className = 'database-layout';
+    const layout = document.createElement('div');
+    layout.className = 'database-layout';
 
-        const sideList = document.createElement('div');
-        sideList.className = 'side-list';
-        sideList.id = 'sideSupplierList';
+    // Sidebar
+    const sideList = document.createElement('div');
+    sideList.className = 'side-list';
+    sideList.id = 'sideList';
+    sideList.style.width = sidebarWidth + 'px';
 
-        const sideDetail = document.createElement('div');
-        sideDetail.className = 'side-detail';
-        sideDetail.id = 'sideDataDetail';
+    // Resizer Sidebar
+    const resizer = document.createElement('div');
+    resizer.className = 'sidebar-resizer';
+    resizer.addEventListener('mousedown', initSidebarResize);
+    resizer.addEventListener('touchstart', initSidebarResize);
 
-        layout.appendChild(sideList);
-        layout.appendChild(sideDetail);
-        container.appendChild(layout);
+    // Main Table Area
+    const sideDetail = document.createElement('div');
+    sideDetail.className = 'side-detail';
+    sideDetail.id = 'tableWrapper';
 
-        renderSupplierListSide();
-        // Default awal tampilkan ALL
-        renderDetailBySupplier('ALL');
-    } else {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'table-wrapper';
-        wrapper.id = 'scrollWrapper';
-        wrapper.onscroll = handleTableScroll;
+    layout.appendChild(sideList);
+    layout.appendChild(resizer);
+    layout.appendChild(sideDetail);
+    container.appendChild(layout);
 
-        const tbl = document.createElement('table');
-        colgroup = document.createElement('colgroup');
-        const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
-        headers.forEach((_, i) => {
-            const col = document.createElement('col'); col.id = `col-${i}`; col.style.width = colWidths[i] + 'px';
-            if (!visibleColumns.includes(i)) col.style.display = 'none';
-            colgroup.appendChild(col);
-        });
-        tbl.appendChild(colgroup);
-
-        const thead = document.createElement('thead');
-        const hrow = document.createElement('tr');
-        const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
-        headers.forEach((h, i) => {
-            const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
-            if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-            const resizer = document.createElement('div'); resizer.className = 'resizer';
-            resizer.addEventListener('mousedown', e => initResize(e, i));
-            th.appendChild(resizer); hrow.appendChild(th);
-        });
-        thead.appendChild(hrow); tbl.appendChild(thead);
-        
-        tableBody = document.createElement('tbody'); tableBody.id = 'tableBody'; tbl.appendChild(tableBody);
-        wrapper.appendChild(tbl);
-        container.appendChild(wrapper);
-        appendRows(0, itemsToShow);
-    }
+    renderSupplierList();
+    renderTable('ALL');
 }
 
-function renderSupplierListSide() {
-    const sideList = document.getElementById('sideSupplierList');
-    const activeSuppliers = [...new Set(filteredIndices.map(idx => rawData[idx][1]))].sort();
+// FUNGSI GESER SIDEBAR
+function initSidebarResize(e) {
+    e.preventDefault();
+    const startX = e.type === 'mousedown' ? e.pageX : e.touches[0].pageX;
+    const startWidth = sidebarWidth;
 
+    const doResize = (m) => {
+        const currentX = m.type === 'mousemove' ? m.pageX : m.touches[0].pageX;
+        sidebarWidth = Math.max(50, startWidth + (currentX - startX));
+        document.getElementById('sideList').style.width = sidebarWidth + 'px';
+    };
+
+    const stopResize = () => {
+        window.removeEventListener('mousemove', doResize);
+        window.removeEventListener('mouseup', stopResize);
+        window.removeEventListener('touchmove', doResize);
+        window.removeEventListener('touchend', stopResize);
+    };
+
+    window.addEventListener('mousemove', doResize);
+    window.addEventListener('mouseup', stopResize);
+    window.addEventListener('touchmove', doResize);
+    window.addEventListener('touchend', stopResize);
+}
+
+function renderSupplierList() {
+    const sideList = document.getElementById('sideList');
     sideList.innerHTML = '';
 
-    // TAMBAHKAN OPSI ALL
-    const allDiv = document.createElement('div');
-    allDiv.className = 'supplier-card all-card active';
-    allDiv.innerHTML = '<i class="fas fa-list"></i> &nbsp; ALL SUPPLIERS';
-    allDiv.onclick = () => {
+    const allBtn = document.createElement('div');
+    allBtn.className = 'supplier-card all-card active';
+    allBtn.innerHTML = '<i class="fas fa-list"></i> &nbsp; ALL SUPPLIERS';
+    allBtn.onclick = () => {
         document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
-        allDiv.classList.add('active');
-        renderDetailBySupplier('ALL');
+        allBtn.classList.add('active');
+        renderTable('ALL');
     };
-    sideList.appendChild(allDiv);
+    sideList.appendChild(allBtn);
 
-    activeSuppliers.forEach(sup => {
+    const suppliers = [...new Set(rawData.slice(1).map(r => r[1]))].sort();
+    suppliers.forEach(sup => {
         const div = document.createElement('div');
         div.className = 'supplier-card';
         div.innerText = sup;
         div.onclick = () => {
             document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
             div.classList.add('active');
-            renderDetailBySupplier(sup);
+            renderTable(sup);
         };
         sideList.appendChild(div);
     });
 }
 
-function renderDetailBySupplier(supName) {
-    const sideDetail = document.getElementById('sideDataDetail');
-    sideDetail.innerHTML = '';
-    
+function renderTable(filterName) {
+    const wrapper = document.getElementById('tableWrapper');
+    wrapper.innerHTML = '';
+
     const tbl = document.createElement('table');
-    const thead = document.createElement('thead');
-    const tbody = document.createElement('tbody');
+    
+    // Create Colgroup for resizing
+    const colGroup = document.createElement('colgroup');
+    const selCol = document.createElement('col'); selCol.style.width = '40px'; 
+    colGroup.appendChild(selCol);
 
-    const hrow = document.createElement('tr');
-    const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
-    headers.forEach((h, i) => {
-        if (visibleColumns.includes(i)) {
-            const th = document.createElement('th'); th.textContent = h;
-            hrow.appendChild(th);
-        }
+    headers.forEach((_, i) => {
+        const col = document.createElement('col');
+        col.style.width = colWidths[i] + 'px';
+        colGroup.appendChild(col);
     });
-    thead.appendChild(hrow);
+    tbl.appendChild(colGroup);
 
-    // LOGIKA FILTER: Jika 'ALL' ambil semua dari filteredIndices, jika tidak filter berdasar nama
-    const supRows = (supName === 'ALL') 
-                    ? filteredIndices 
-                    : filteredIndices.filter(idx => rawData[idx][1] === supName);
+    // Header
+    const thead = document.createElement('thead');
+    const hRow = document.createElement('tr');
+    
+    const thSel = document.createElement('th'); thSel.innerText = 'SEL'; hRow.appendChild(thSel);
+    
+    headers.forEach((h, i) => {
+        const th = document.createElement('th');
+        th.innerHTML = `<span>${h}</span><div class="resizer" data-col="${i}"></div>`;
+        
+        // Event Listener Resize Kolom
+        const resizer = th.querySelector('.resizer');
+        resizer.addEventListener('mousedown', initColResize);
+        resizer.addEventListener('touchstart', initColResize);
 
-    supRows.forEach(rowIndex => {
+        hRow.appendChild(th);
+    });
+    thead.appendChild(hRow);
+    tbl.appendChild(thead);
+
+    // Body
+    const tbody = document.createElement('tbody');
+    const displayRows = filterName === 'ALL' ? filteredIndices : filteredIndices.filter(idx => rawData[idx][1] === filterName);
+
+    displayRows.forEach(idx => {
         const tr = document.createElement('tr');
-        tr.id = `tr-${rowIndex}`;
-        tr.onclick = () => selectRow(rowIndex);
-        if (selectedRowIndex === rowIndex) tr.classList.add('selected-row');
+        tr.onclick = () => selectRow(idx, tr);
+        if (selectedRowIndex === idx) tr.classList.add('selected-row');
 
-        const tdSel = document.createElement('td'); tdSel.className = 'text-center';
-        const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === rowIndex);
-        tdSel.appendChild(radio); tr.appendChild(tdSel);
+        const tdRadio = document.createElement('td');
+        tdRadio.style.textAlign = 'center';
+        tdRadio.innerHTML = `<input type="radio" name="rowSel" ${selectedRowIndex === idx ? 'checked' : ''}>`;
+        tr.appendChild(tdRadio);
 
-        rawData[rowIndex].forEach((cell, idx) => {
-            if (visibleColumns.includes(idx)) {
-                const td = document.createElement('td');
-                const val = cell != null ? String(cell) : '';
-                const imgUrl = toDisplayableImgUrl(val);
-                if (imgUrl) {
-                    const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
-                    td.appendChild(img);
-                } else td.textContent = val;
-                tr.appendChild(td);
-            }
+        rawData[idx].forEach(cell => {
+            const td = document.createElement('td');
+            td.innerText = cell ?? '';
+            tr.appendChild(td);
         });
         tbody.appendChild(tr);
     });
-
-    tbl.appendChild(thead); tbl.appendChild(tbody);
-    sideDetail.appendChild(tbl);
-}
-
-function handleTableScroll() {
-    const wrap = document.getElementById('scrollWrapper');
-    if (!wrap) return;
-    if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
-        if (itemsToShow < filteredIndices.length) {
-            const start = itemsToShow;
-            itemsToShow += 30;
-            appendRows(start, itemsToShow);
-            updateRowCounter();
-        }
-    }
-}
-
-function appendRows(fromIdx, toIdx) {
-    const limit = Math.min(filteredIndices.length, toIdx);
-    for (let fi = fromIdx; fi < limit; fi++) {
-        tableBody.appendChild(createRow(filteredIndices[fi]));
-    }
-}
-
-function createRow(r) {
-    const tr = document.createElement('tr'); tr.id = `tr-${r}`; tr.onclick = () => selectRow(r);
-    if (selectedRowIndex === r) tr.classList.add('selected-row');
-    const tdSel = document.createElement('td'); tdSel.className = 'text-center';
-    const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === r);
-    tdSel.appendChild(radio); tr.appendChild(tdSel);
-    rawData[r].forEach((cell, idx) => {
-        const td = document.createElement('td');
-        if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
-        const val = cell != null ? String(cell) : '';
-        const imgUrl = toDisplayableImgUrl(val);
-        if (imgUrl) {
-            const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
-            td.appendChild(img);
-        } else td.textContent = val;
-        tr.appendChild(td);
-    });
-    return tr;
-}
-
-function toDisplayableImgUrl(url) {
-    if (!url || typeof url !== 'string' || !url.startsWith('http')) return null;
-    const ucMatch = url.match(/[?&]id=([\w-]+)/);
-    if (url.includes('drive.google.com') && ucMatch) return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=s80`;
-    if (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
-    return null;
-}
-
-function selectRow(index) {
-    if (selectedRowIndex !== null) {
-        const oldRow = document.getElementById(`tr-${selectedRowIndex}`);
-        if(oldRow) oldRow.classList.remove('selected-row');
-    }
-    selectedRowIndex = index;
-    const tr = document.getElementById(`tr-${index}`);
-    if (tr) { 
-        tr.classList.add('selected-row'); 
-        const rad = tr.querySelector('input[type="radio"]');
-        if(rad) rad.checked = true; 
-    }
-}
-
-function initResize(e, i) {
-    e.stopPropagation();
-    const startX = e.pageX, startWidth = colWidths[i];
-    const doResize = m => { const nW = Math.max(20, startWidth + (m.pageX - startX)); colWidths[i] = nW; document.getElementById(`col-${i}`).style.width = nW + 'px'; };
-    const stop = () => { document.removeEventListener('mousemove', doResize); document.removeEventListener('mouseup', stop); };
-    document.addEventListener('mousemove', doResize); document.addEventListener('mouseup', stop);
-}
-
-function toggleFilterPanel(event) { event.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
-
-function createFilterCheckboxes() {
-    const container = document.getElementById('filterCheckboxes'); container.innerHTML = '';
-    headers.forEach((h, i) => {
-        const lbl = document.createElement('label'); lbl.className = 'filter-item';
-        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = visibleColumns.includes(i);
-        cb.onchange = () => {
-            if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } else { visibleColumns = visibleColumns.filter(x=>x!==i); }
-            buildTable();
-        };
-        lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
-    });
-}
-
-function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); }
-
-function handleAutofillLogic(i, val) {
-    if (currentSheet === "Harga Supplier") {
-        if (i === 1) { 
-            const match = dbSupplier.find(row => row[1] === val);
-            if (match) { document.getElementById('field-text-0').value = match[0]; document.getElementById('field-0').value = match[0]; }
-            else if (!val) { document.getElementById('field-text-0').value = ""; document.getElementById('field-0').value = ""; }
-        }
-        if (i === 3) {
-            const match = dbMasterIkan.find(row => row[19] === val); 
-            if (match) {
-                document.getElementById('field-text-2').value = match[3]; document.getElementById('field-2').value = match[3];
-                document.getElementById('field-text-4').value = match[9]; document.getElementById('field-4').value = match[9];
-                document.getElementById('field-text-5').value = match[10]; document.getElementById('field-5').value = match[10];
-            } else if (!val) {
-                [2, 4, 5].forEach(idx => { document.getElementById('field-text-' + idx).value = ""; document.getElementById('field-' + idx).value = ""; });
-            }
-        }
-    }
-}
-
-function showDatalist(elm) {
-    setTimeout(() => {
-        elm.dispatchEvent(new Event('input', { bubbles: true }));
-        if (elm.list) { elm.focus(); }
-    }, 10);
-}
-
-function openModal(mode) {
-    if (mode === 'edit' && selectedRowIndex === null) { alert("Pilih data!"); return; }
-    currentMode = mode;
-    const form = document.getElementById('dynamicForm'); form.innerHTML = '';
-    document.getElementById('modalTitle').innerText = `${mode === 'add' ? 'TAMBAH' : 'EDIT'} : ${currentSheet}`;
     
-    let autoSupplierID = "";
-    if (mode === 'add' && currentSheet === "Data Supplier") {
-        const year = new Date().getFullYear();
-        autoSupplierID = year + String(rawData.length).padStart(2, '0');
-    }
-
-    headers.forEach((h, i) => {
-        let val = mode === 'edit' ? String(rawData[selectedRowIndex][i] ?? '') : '';
-        if (mode === 'add' && currentSheet === "Data Supplier" && i === 0) val = autoSupplierID;
-
-        const group = document.createElement('div'); group.className = 'form-group';
-        const isImg = h.toUpperCase().includes("FOTO") || h.toUpperCase().includes("IMAGE") || h.toUpperCase().includes("GAMBAR");
-        
-        let isLocked = false, useDatalist = "";
-        
-        if (currentSheet === "Harga Supplier") {
-            if ([0, 2, 4, 5].includes(i)) isLocked = true; 
-            if (i === 1) useDatalist = "listSupplier"; 
-            if (i === 3) useDatalist = "listFish"; 
-        } else if (currentSheet === "Data Supplier") {
-            if (i === 0) isLocked = true; 
-        }
-
-        if (isImg) {
-            group.innerHTML = `<label>${h}</label>
-                <input type="hidden" id="field-${i}" value="${val}">
-                <input type="file" accept="image/*" onchange="uploadFile(this, ${i})">
-                <img id="prev-${i}" src="${toDisplayableImgUrl(val) || ''}" class="img-preview" style="display:${val?'block':'none'}">`;
-        } else {
-            group.innerHTML = `<label>${h} ${isLocked ? '🔒' : ''}</label>
-                <input type="hidden" id="field-${i}" value="${val}">
-                <input type="text" id="field-text-${i}" value="${val}" list="${useDatalist}"
-                       ${isLocked ? 'readonly class="locked"' : ''}
-                       autocomplete="off"
-                       onfocus="${useDatalist ? "this.value=''; handleAutofillLogic("+i+", ''); showDatalist(this)" : ""}"
-                       oninput="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)"
-                       onchange="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)">`;
-        }
-        form.appendChild(group);
-    });
-    document.getElementById('dataModal').style.display = 'block';
+    tbl.appendChild(tbody);
+    wrapper.appendChild(tbl);
 }
 
-function uploadFile(input, idx) {
-    const file = input.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64 = e.target.result.split(',')[1];
-        showLoader('⚡ UPLOADING IMAGE...');
-        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'upload', filename: file.name, mimeType: file.type, data: base64 }) })
-        .then(res => res.json()).then(res => {
-            if (res.status === 'success') {
-                document.getElementById('field-' + idx).value = res.url;
-                const prev = document.getElementById('prev-' + idx); prev.src = res.url; prev.style.display = 'block';
-            }
-        }).finally(() => hideLoader());
+// FUNGSI GESER KOLOM TABEL
+function initColResize(e) {
+    e.preventDefault();
+    const colIdx = parseInt(this.getAttribute('data-col'));
+    const startX = e.type === 'mousedown' ? e.pageX : e.touches[0].pageX;
+    const startWidth = colWidths[colIdx];
+    const colEl = document.querySelectorAll('colgroup col')[colIdx + 1];
+
+    const doResize = (m) => {
+        const currentX = m.type === 'mousemove' ? m.pageX : m.touches[0].pageX;
+        const newWidth = Math.max(30, startWidth + (currentX - startX));
+        colWidths[colIdx] = newWidth;
+        colEl.style.width = newWidth + 'px';
     };
-    reader.readAsDataURL(file);
+
+    const stopResize = () => {
+        window.removeEventListener('mousemove', doResize);
+        window.removeEventListener('mouseup', stopResize);
+        window.removeEventListener('touchmove', doResize);
+        window.removeEventListener('touchend', stopResize);
+    };
+
+    window.addEventListener('mousemove', doResize);
+    window.addEventListener('mouseup', stopResize);
+    window.addEventListener('touchmove', doResize);
+    window.addEventListener('touchend', stopResize);
 }
 
-function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
-
-async function handleSave() {
-    const dataSave = headers.map((_, i) => {
-        const el = document.getElementById(`field-${i}`);
-        return el ? el.value : "";
-    });
-    if (currentSheet === "Data Supplier" && dataSave[0] === "") { alert("ID Supplier kosong! Harap ulangi."); return; }
-    showLoader('⚡ MENGIRIM DATA KE SPREADSHEET...');
-    try {
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: currentMode === 'edit' ? selectedRowIndex : null, data: dataSave }) });
-        const result = await res.json();
-        if (result.status === 'success') { alert('Data Berhasil Tersimpan!'); await loadData(currentSheet); closeModal(); }
-        else { alert('Error: ' + result.message); }
-    } catch(e) { alert('Gagal koneksi.'); } finally { hideLoader(); }
+function selectRow(idx, tr) {
+    document.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+    tr.classList.add('selected-row');
+    tr.querySelector('input').checked = true;
+    selectedRowIndex = idx;
 }
 
-async function handleDelete() {
-    if (selectedRowIndex === null || !confirm("Hapus data?")) return;
-    showLoader();
-    try {
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', sheet: currentSheet, rowIndex: selectedRowIndex }) });
-        if ((await res.json()).status === 'success') { await loadData(currentSheet); selectedRowIndex = null; }
-    } catch(e) { alert('Gagal hapus.'); } finally { hideLoader(); }
+function resetWidths() {
+    computeDefaultWidths();
+    sidebarWidth = 160;
+    buildLayout();
 }
 
 document.getElementById('searchInput').oninput = function() {
-    searchQuery = this.value; 
-    rebuildFilteredIndices(); 
-    buildTable(); 
-};
-
-window.onclick = e => {
-    const p = document.getElementById('columnFilterPanel');
-    if (p && p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
+    searchQuery = this.value;
+    rebuildFilteredIndices();
+    const activeSup = document.querySelector('.supplier-card.active').innerText;
+    renderTable(activeSup.includes('ALL') ? 'ALL' : activeSup);
 };
 </script>
 </body>
