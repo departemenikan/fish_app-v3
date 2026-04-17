@@ -200,24 +200,36 @@ async function loadData(sheet) {
         const res = await fetch(`${SCRIPT_URL}?action=read&sheet=${encodeURIComponent(sheet)}`);
         const result = await res.json();
         if (result.status === 'success') {
-            rawData = result.data;
+            rawData = result.data; // Baris 0 = Header, Baris 1 = Data Pertama + Config
             headers = rawData[0];
-            const bodyRows = rawData.slice(1);
-            if (sheet === "Harga Supplier" || sheet === "Master Data Ikan") {
-                bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-            }
-            rawData = [headers, ...bodyRows];
             
-            // BACA CONFIG DARI SERVER (W2)
-            const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
-            visibleColumns = savedConfig ? savedConfig.split(',').map(Number) : headers.map((_, i) => i);
+            // LOGIKA DINAMIS: Ambil config dari kolom paling terakhir di baris data
+            // Karena kita simpan di lastCol + 1, maka di array dia adalah elemen terakhir
+            let lastRowData = rawData[1] || [];
+            let savedConfig = "";
+            
+            // Cek apakah kolom terakhir di baris ini berisi format "0,1,2,..."
+            let potentialConfig = String(lastRowData[lastRowData.length - 1]).trim();
+            
+            if (potentialConfig && potentialConfig.includes(',')) {
+                savedConfig = potentialConfig;
+            }
+
+            if (savedConfig) {
+                visibleColumns = savedConfig.split(',').map(Number);
+            } else {
+                // Jika belum ada config, tampilkan semua kolom sesuai panjang header
+                visibleColumns = headers.map((_, i) => i);
+            }
             
             computeWidths();
             createFilterCheckboxes();
             rebuildFilteredIndices();
             buildTable();
         }
-    } catch(e) { alert('Gagal koneksi.'); }
+    } catch(e) {
+        alert('Gagal memuat data.');
+    }
     hideLoader();
 }
 
