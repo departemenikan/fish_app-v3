@@ -40,6 +40,18 @@
         #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
         #searchInput { width: 180px; padding: 6px 10px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
         #rowCounter { font-size: 10px; color: #777; white-space: nowrap; margin-right: 10px; }
+        
+        /* NEW LAYOUT FOR DASHBOARD MODE */
+        .database-layout { display: flex; height: calc(100vh - 130px); overflow: hidden; }
+        .side-list { width: 220px; border-right: 1px solid #222; overflow-y: auto; background: #050505; }
+        .side-detail { flex: 1; overflow: auto; background: #000; position: relative; }
+        .supplier-card { padding: 12px 15px; border-bottom: 1px solid #1a1a1a; cursor: pointer; font-size: 11px; color: #888; transition: 0.2s; }
+        .supplier-card:hover { background: #111; color: var(--neon); }
+        .supplier-card.active { background: #111; color: var(--neon); border-left: 3px solid var(--neon); font-weight: bold; }
+        
+        /* Special Style for ALL button */
+        .all-card { color: var(--green); border-bottom: 2px solid #222; font-weight: bold; }
+
         .table-wrapper { overflow: auto; height: calc(100vh - 130px); width: 100%; position: relative; }
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
         th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
@@ -144,7 +156,7 @@
         <span id="rowCounter"></span>
         <input type="search" id="searchInput" placeholder="Cari data...">
     </div>
-    <div class="table-wrapper" id="scrollWrapper" onscroll="handleTableScroll()">
+    <div id="mainTableArea">
         <div id="tableContainer"></div>
     </div>
 </section>
@@ -200,6 +212,14 @@ async function loadData(sheet) {
         if (result.status === 'success') {
             rawData = result.data;
             headers = rawData[0];
+
+            if (sheet === "Harga Supplier") {
+                const headerRow = rawData[0];
+                const bodyRows = rawData.slice(1);
+                bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+                rawData = [headerRow, ...bodyRows];
+            }
+
             const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
             visibleColumns = savedConfig ? savedConfig.split(',').map(Number) : headers.map((_, i) => i);
             computeWidths();
@@ -220,10 +240,151 @@ function rebuildFilteredIndices() {
     updateRowCounter();
 }
 
-function updateRowCounter() { const shown = Math.min(itemsToShow, filteredIndices.length); document.getElementById('rowCounter').textContent = `${shown} / ${filteredIndices.length} baris`; }
+function updateRowCounter() { const shown = filteredIndices.length; document.getElementById('rowCounter').textContent = `${shown} baris ditemukan`; }
+
+function buildTable() {
+    const container = document.getElementById('tableContainer');
+    container.innerHTML = '';
+
+    if (currentSheet === "Harga Supplier") {
+        const layout = document.createElement('div');
+        layout.className = 'database-layout';
+
+        const sideList = document.createElement('div');
+        sideList.className = 'side-list';
+        sideList.id = 'sideSupplierList';
+
+        const sideDetail = document.createElement('div');
+        sideDetail.className = 'side-detail';
+        sideDetail.id = 'sideDataDetail';
+
+        layout.appendChild(sideList);
+        layout.appendChild(sideDetail);
+        container.appendChild(layout);
+
+        renderSupplierListSide();
+        // Default awal tampilkan ALL
+        renderDetailBySupplier('ALL');
+    } else {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrapper';
+        wrapper.id = 'scrollWrapper';
+        wrapper.onscroll = handleTableScroll;
+
+        const tbl = document.createElement('table');
+        colgroup = document.createElement('colgroup');
+        const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
+        headers.forEach((_, i) => {
+            const col = document.createElement('col'); col.id = `col-${i}`; col.style.width = colWidths[i] + 'px';
+            if (!visibleColumns.includes(i)) col.style.display = 'none';
+            colgroup.appendChild(col);
+        });
+        tbl.appendChild(colgroup);
+
+        const thead = document.createElement('thead');
+        const hrow = document.createElement('tr');
+        const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
+        headers.forEach((h, i) => {
+            const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
+            if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
+            const resizer = document.createElement('div'); resizer.className = 'resizer';
+            resizer.addEventListener('mousedown', e => initResize(e, i));
+            th.appendChild(resizer); hrow.appendChild(th);
+        });
+        thead.appendChild(hrow); tbl.appendChild(thead);
+        
+        tableBody = document.createElement('tbody'); tableBody.id = 'tableBody'; tbl.appendChild(tableBody);
+        wrapper.appendChild(tbl);
+        container.appendChild(wrapper);
+        appendRows(0, itemsToShow);
+    }
+}
+
+function renderSupplierListSide() {
+    const sideList = document.getElementById('sideSupplierList');
+    const activeSuppliers = [...new Set(filteredIndices.map(idx => rawData[idx][1]))].sort();
+
+    sideList.innerHTML = '';
+
+    // TAMBAHKAN OPSI ALL
+    const allDiv = document.createElement('div');
+    allDiv.className = 'supplier-card all-card active';
+    allDiv.innerHTML = '<i class="fas fa-list"></i> &nbsp; ALL SUPPLIERS';
+    allDiv.onclick = () => {
+        document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
+        allDiv.classList.add('active');
+        renderDetailBySupplier('ALL');
+    };
+    sideList.appendChild(allDiv);
+
+    activeSuppliers.forEach(sup => {
+        const div = document.createElement('div');
+        div.className = 'supplier-card';
+        div.innerText = sup;
+        div.onclick = () => {
+            document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
+            div.classList.add('active');
+            renderDetailBySupplier(sup);
+        };
+        sideList.appendChild(div);
+    });
+}
+
+function renderDetailBySupplier(supName) {
+    const sideDetail = document.getElementById('sideDataDetail');
+    sideDetail.innerHTML = '';
+    
+    const tbl = document.createElement('table');
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+
+    const hrow = document.createElement('tr');
+    const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
+    headers.forEach((h, i) => {
+        if (visibleColumns.includes(i)) {
+            const th = document.createElement('th'); th.textContent = h;
+            hrow.appendChild(th);
+        }
+    });
+    thead.appendChild(hrow);
+
+    // LOGIKA FILTER: Jika 'ALL' ambil semua dari filteredIndices, jika tidak filter berdasar nama
+    const supRows = (supName === 'ALL') 
+                    ? filteredIndices 
+                    : filteredIndices.filter(idx => rawData[idx][1] === supName);
+
+    supRows.forEach(rowIndex => {
+        const tr = document.createElement('tr');
+        tr.id = `tr-${rowIndex}`;
+        tr.onclick = () => selectRow(rowIndex);
+        if (selectedRowIndex === rowIndex) tr.classList.add('selected-row');
+
+        const tdSel = document.createElement('td'); tdSel.className = 'text-center';
+        const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === rowIndex);
+        tdSel.appendChild(radio); tr.appendChild(tdSel);
+
+        rawData[rowIndex].forEach((cell, idx) => {
+            if (visibleColumns.includes(idx)) {
+                const td = document.createElement('td');
+                const val = cell != null ? String(cell) : '';
+                const imgUrl = toDisplayableImgUrl(val);
+                if (imgUrl) {
+                    const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
+                    td.appendChild(img);
+                } else td.textContent = val;
+                tr.appendChild(td);
+            }
+        });
+        tbody.appendChild(tr);
+    });
+
+    tbl.appendChild(thead); tbl.appendChild(tbody);
+    sideDetail.appendChild(tbl);
+}
 
 function handleTableScroll() {
     const wrap = document.getElementById('scrollWrapper');
+    if (!wrap) return;
     if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
         if (itemsToShow < filteredIndices.length) {
             const start = itemsToShow;
@@ -234,37 +395,11 @@ function handleTableScroll() {
     }
 }
 
-function buildTable() {
-    itemsToShow = 30;
-    const container = document.getElementById('tableContainer');
-    const tbl = document.createElement('table');
-    colgroup = document.createElement('colgroup');
-    const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
-    headers.forEach((_, i) => {
-        const col = document.createElement('col'); col.id = `col-${i}`; col.style.width = colWidths[i] + 'px';
-        if (!visibleColumns.includes(i)) col.style.display = 'none';
-        colgroup.appendChild(col);
-    });
-    tbl.appendChild(colgroup);
-    const thead = document.createElement('thead');
-    const hrow = document.createElement('tr');
-    const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
-    headers.forEach((h, i) => {
-        const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
-        if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-        const resizer = document.createElement('div'); resizer.className = 'resizer';
-        resizer.addEventListener('mousedown', e => initResize(e, i));
-        th.appendChild(resizer); hrow.appendChild(th);
-    });
-    thead.appendChild(hrow); tbl.appendChild(thead);
-    tableBody = document.createElement('tbody'); tableBody.id = 'tableBody'; tbl.appendChild(tableBody);
-    container.innerHTML = ''; container.appendChild(tbl);
-    appendRows(0, itemsToShow);
-}
-
 function appendRows(fromIdx, toIdx) {
     const limit = Math.min(filteredIndices.length, toIdx);
-    for (let fi = fromIdx; fi < limit; fi++) tableBody.appendChild(createRow(filteredIndices[fi]));
+    for (let fi = fromIdx; fi < limit; fi++) {
+        tableBody.appendChild(createRow(filteredIndices[fi]));
+    }
 }
 
 function createRow(r) {
@@ -296,10 +431,17 @@ function toDisplayableImgUrl(url) {
 }
 
 function selectRow(index) {
-    if (selectedRowIndex !== null) document.getElementById(`tr-${selectedRowIndex}`)?.classList.remove('selected-row');
+    if (selectedRowIndex !== null) {
+        const oldRow = document.getElementById(`tr-${selectedRowIndex}`);
+        if(oldRow) oldRow.classList.remove('selected-row');
+    }
     selectedRowIndex = index;
     const tr = document.getElementById(`tr-${index}`);
-    if (tr) { tr.classList.add('selected-row'); tr.querySelector('input').checked = true; }
+    if (tr) { 
+        tr.classList.add('selected-row'); 
+        const rad = tr.querySelector('input[type="radio"]');
+        if(rad) rad.checked = true; 
+    }
 }
 
 function initResize(e, i) {
@@ -319,7 +461,7 @@ function createFilterCheckboxes() {
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = visibleColumns.includes(i);
         cb.onchange = () => {
             if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } else { visibleColumns = visibleColumns.filter(x=>x!==i); }
-            loadData(currentSheet);
+            buildTable();
         };
         lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
     });
@@ -347,13 +489,10 @@ function handleAutofillLogic(i, val) {
     }
 }
 
-// Fungsi pembantu agar datalist langsung muncul saat input mendapatkan fokus
 function showDatalist(elm) {
     setTimeout(() => {
         elm.dispatchEvent(new Event('input', { bubbles: true }));
-        if (elm.list) {
-            elm.focus();
-        }
+        if (elm.list) { elm.focus(); }
     }, 10);
 }
 
@@ -392,7 +531,6 @@ function openModal(mode) {
                 <input type="file" accept="image/*" onchange="uploadFile(this, ${i})">
                 <img id="prev-${i}" src="${toDisplayableImgUrl(val) || ''}" class="img-preview" style="display:${val?'block':'none'}">`;
         } else {
-            // Bagian ini diperbarui untuk menangani fokus datalist secara instan
             group.innerHTML = `<label>${h} ${isLocked ? '🔒' : ''}</label>
                 <input type="hidden" id="field-${i}" value="${val}">
                 <input type="text" id="field-text-${i}" value="${val}" list="${useDatalist}"
@@ -431,31 +569,14 @@ async function handleSave() {
         const el = document.getElementById(`field-${i}`);
         return el ? el.value : "";
     });
-
-    if (currentSheet === "Data Supplier" && dataSave[0] === "") {
-        alert("ID Supplier kosong! Harap ulangi."); return;
-    }
-
+    if (currentSheet === "Data Supplier" && dataSave[0] === "") { alert("ID Supplier kosong! Harap ulangi."); return; }
     showLoader('⚡ MENGIRIM DATA KE SPREADSHEET...');
     try {
-        const res = await fetch(SCRIPT_URL, { 
-            method: 'POST', 
-            body: JSON.stringify({ 
-                action: 'save', 
-                sheet: currentSheet, 
-                rowIndex: currentMode === 'edit' ? selectedRowIndex : null, 
-                data: dataSave 
-            }) 
-        });
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: currentMode === 'edit' ? selectedRowIndex : null, data: dataSave }) });
         const result = await res.json();
-        if (result.status === 'success') { 
-            alert('Data Berhasil Tersimpan di Spreadsheet!'); 
-            await loadData(currentSheet); 
-            closeModal(); 
-        } else {
-            alert('Error: ' + result.message);
-        }
-    } catch(e) { alert('Gagal koneksi ke Back-end.'); } finally { hideLoader(); }
+        if (result.status === 'success') { alert('Data Berhasil Tersimpan!'); await loadData(currentSheet); closeModal(); }
+        else { alert('Error: ' + result.message); }
+    } catch(e) { alert('Gagal koneksi.'); } finally { hideLoader(); }
 }
 
 async function handleDelete() {
@@ -468,12 +589,14 @@ async function handleDelete() {
 }
 
 document.getElementById('searchInput').oninput = function() {
-    searchQuery = this.value; rebuildFilteredIndices(); tableBody.innerHTML = ''; itemsToShow = 30; appendRows(0, itemsToShow);
+    searchQuery = this.value; 
+    rebuildFilteredIndices(); 
+    buildTable(); 
 };
 
 window.onclick = e => {
     const p = document.getElementById('columnFilterPanel');
-    if (p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
+    if (p && p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
 };
 </script>
 </body>
