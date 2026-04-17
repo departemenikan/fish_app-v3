@@ -59,7 +59,6 @@
         th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
         td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: clip; }
         
-        /* FIX: Class untuk menyembunyikan kolom */
         .hidden-col { display: none !important; }
 
         .resizer { position: absolute; right: 0; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 11; }
@@ -92,9 +91,6 @@
     </div>
 </div>
 
-<datalist id="listSupplier"></datalist>
-<datalist id="listFish"></datalist>
-
 <header id="mainHeader">
     <h1>FISH APP-V3</h1>
     <div class="subtitle">Sistem Management Inventory Ikan</div>
@@ -109,39 +105,7 @@
                 <a href="#" onclick="openSheet('Master Data Ikan')">Master Data Ikan</a>
             </div>
         </div>
-        <div class="dropdown">
-            <button class="dropbtn">🚢 PEMBELIAN ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Nota')">Nota</a>
-                <a href="#" onclick="openSheet('Pembelian Ikan')">Pembelian Ikan</a>
-                <a href="#" onclick="openSheet('Stok List Wild')">Stok List Wild</a>
-                <a href="#" onclick="openSheet('Stok List Culture')">Stok List Culture</a>
-                <a href="#" onclick="openSheet('Stok List')">Stok List</a>
-            </div>
         </div>
-        <div class="dropdown">
-            <button class="dropbtn">✈️ PENGIRIMAN ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Tgl Order')">Tgl Order</a>
-                <a href="#" onclick="openSheet('Order')">Order</a>
-                <a href="#" onclick="openSheet('Invoice')">Invoice</a>
-                <a href="#" onclick="openSheet('Box')">Box</a>
-                <a href="#" onclick="openSheet('Pengiriman Ikan')">Pengiriman Ikan</a>
-                <a href="#" onclick="openSheet('Dead On Arrival')">Dead On Arrival</a>
-                <a href="#" onclick="openSheet('List Packing')">List Packing</a>
-            </div>
-        </div>
-        <div class="dropdown">
-            <button class="dropbtn">📊 STOK ▾</button>
-            <div class="dropdown-content">
-                <a href="#" onclick="openSheet('Opname')">Opname</a>
-                <a href="#" onclick="openSheet('Kematian')">Kematian</a>
-                <a href="#" onclick="openSheet('Kerusakan')">Kerusakan</a>
-                <a href="#" onclick="openSheet('Rekap Stok')">Rekap Stok</a>
-                <a href="#" onclick="openSheet('Laporan Stok')">Laporan Stok</a>
-            </div>
-        </div>
-    </div>
 </header>
 
 <section id="homePageContent">
@@ -185,7 +149,6 @@ async function openSheet(sheetName) {
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('homePageContent').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
-    if(sheetName === "Harga Supplier" || sheetName === "Master Data Ikan") await fetchDependencies();
     await loadData(sheetName);
 }
 
@@ -202,20 +165,30 @@ async function loadData(sheet) {
         if (result.status === 'success') {
             rawData = result.data;
             headers = rawData[0];
-            const bodyRows = rawData.slice(1);
-            if (sheet === "Harga Supplier" || sheet === "Master Data Ikan") {
-                bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-            }
-            rawData = [headers, ...bodyRows];
+            
+            // Baca config dari baris 2 kolom 23 (W2)
             const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
             visibleColumns = savedConfig ? savedConfig.split(',').map(Number) : headers.map((_, i) => i);
+            
             computeWidths();
             createFilterCheckboxes();
             rebuildFilteredIndices();
             buildTable();
         }
-    } catch(e) { alert('Gagal koneksi.'); }
+    } catch(e) { console.error(e); }
     hideLoader();
+}
+
+/** FUNGSI BARU: SIMPAN CONFIG KE GOOGLE SHEETS **/
+async function saveColumnConfig() {
+    const configString = visibleColumns.join(',');
+    try {
+        // Kirim perintah updateConfig ke Apps Script
+        await fetch(`${SCRIPT_URL}?action=updateConfig&sheet=${encodeURIComponent(currentSheet)}&config=${configString}`);
+        console.log("Config tersimpan di server: " + configString);
+    } catch (e) {
+        console.error("Gagal menyimpan ke server");
+    }
 }
 
 function computeWidths() { colWidths = headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200)); }
@@ -223,176 +196,72 @@ function computeWidths() { colWidths = headers.map(h => Math.min(Math.max(String
 function rebuildFilteredIndices() {
     const q = searchQuery.toLowerCase();
     filteredIndices = [];
-    for (let r = 1; r < rawData.length; r++) { if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r); }
+    for (let r = 1; r < rawData.length; r++) { 
+        if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r); 
+    }
     updateRowCounter();
 }
 
 function updateRowCounter() { document.getElementById('rowCounter').textContent = `${filteredIndices.length} baris`; }
 
-/** FIX RESIZER UNTUK ANDROID & LAPTOP **/
-function initSidebarResize(e) {
-    e.preventDefault();
-    const startX = e.pageX || (e.touches ? e.touches[0].pageX : 0);
-    const startWidth = sidebarWidth;
-    const sideList = document.getElementById('sideGroupList');
-
-    const doResize = m => {
-        const currentX = m.pageX || (m.touches ? m.touches[0].pageX : 0);
-        sidebarWidth = Math.max(50, startWidth + (currentX - startX));
-        sideList.style.width = sidebarWidth + 'px';
-    };
-
-    const stop = () => {
-        document.removeEventListener('mousemove', doResize);
-        document.removeEventListener('mouseup', stop);
-        document.removeEventListener('touchmove', doResize);
-        document.removeEventListener('touchend', stop);
-    };
-
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stop);
-    document.addEventListener('touchmove', doResize, { passive: false });
-    document.addEventListener('touchend', stop);
+function createFilterCheckboxes() {
+    const container = document.getElementById('filterCheckboxes'); 
+    container.innerHTML = '';
+    headers.forEach((h, i) => {
+        const lbl = document.createElement('label'); lbl.className = 'filter-item';
+        const cb = document.createElement('input'); 
+        cb.type = 'checkbox'; 
+        cb.checked = visibleColumns.includes(i);
+        
+        cb.onchange = async () => {
+            if(cb.checked) { 
+                if(!visibleColumns.includes(i)) visibleColumns.push(i); 
+            } else { 
+                visibleColumns = visibleColumns.filter(x => x !== i); 
+            }
+            
+            // 1. Refresh Tampilan Segera
+            if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") {
+                renderDetailByGroup(currentGroup); 
+            } else {
+                buildTable();
+            }
+            
+            // 2. Simpan Permanen ke Server
+            await saveColumnConfig();
+        };
+        
+        lbl.appendChild(cb); 
+        lbl.append(' ' + h); 
+        container.appendChild(lbl);
+    });
 }
 
-function initResize(e, i, isDashboard = false) {
-    e.stopPropagation();
-    const startX = e.pageX || (e.touches ? e.touches[0].pageX : 0);
-    const startWidth = colWidths[i];
-    const colId = isDashboard ? `detail-col-${i}` : `col-${i}`;
-    const targetCol = document.getElementById(colId);
-
-    const doResize = m => {
-        const currentX = m.pageX || (m.touches ? m.touches[0].pageX : 0);
-        const nW = Math.max(20, startWidth + (currentX - startX));
-        colWidths[i] = nW;
-        if(targetCol) targetCol.style.width = nW + 'px';
-    };
-
-    const stop = () => {
-        document.removeEventListener('mousemove', doResize);
-        document.removeEventListener('mouseup', stop);
-        document.removeEventListener('touchmove', doResize);
-        document.removeEventListener('touchend', stop);
-    };
-
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stop);
-    document.addEventListener('touchmove', doResize, { passive: false });
-    document.addEventListener('touchend', stop);
+function resetWidths() { 
+    visibleColumns = headers.map((_, i) => i); 
+    buildTable(); 
+    saveColumnConfig(); // Simpan kondisi full lagi
 }
 
+/** BAGIAN PEMBUATAN TABEL DAN FUNGSI LAINNYA **/
 function buildTable() {
     const container = document.getElementById('tableContainer');
     container.innerHTML = '';
 
-    if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") {
-        const layout = document.createElement('div');
-        layout.className = 'database-layout';
-
-        const sideList = document.createElement('div');
-        sideList.className = 'side-list';
-        sideList.id = 'sideGroupList';
-        sideList.style.width = sidebarWidth + 'px';
-
-        const sResizer = document.createElement('div');
-        sResizer.className = 'sidebar-resizer';
-        sResizer.addEventListener('mousedown', initSidebarResize);
-        sResizer.addEventListener('touchstart', initSidebarResize, { passive: false });
-
-        const sideDetail = document.createElement('div');
-        sideDetail.className = 'side-detail';
-        sideDetail.id = 'sideDataDetail';
-        sideDetail.onscroll = handleDashboardScroll;
-
-        layout.appendChild(sideList);
-        layout.appendChild(sResizer);
-        layout.appendChild(sideDetail);
-        container.appendChild(layout);
-
-        renderSidebarGroups();
-        renderDetailByGroup(currentGroup || 'ALL');
-    } else {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'table-wrapper';
-        wrapper.id = 'scrollWrapper';
-        wrapper.onscroll = handleTableScroll;
-
-        const tbl = document.createElement('table');
-        colgroup = document.createElement('colgroup');
-        const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
-        headers.forEach((_, i) => {
-            const col = document.createElement('col'); col.id = `col-${i}`; col.style.width = colWidths[i] + 'px';
-            if (!visibleColumns.includes(i)) col.style.display = 'none';
-            colgroup.appendChild(col);
-        });
-        tbl.appendChild(colgroup);
-
-        const thead = document.createElement('thead');
-        const hrow = document.createElement('tr');
-        const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
-        headers.forEach((h, i) => {
-            const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
-            if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-            const resizer = document.createElement('div'); resizer.className = 'resizer';
-            resizer.addEventListener('mousedown', e => initResize(e, i));
-            resizer.addEventListener('touchstart', e => initResize(e, i), { passive: false });
-            th.appendChild(resizer); hrow.appendChild(th);
-        });
-        thead.appendChild(hrow); tbl.appendChild(thead);
-        
-        tableBody = document.createElement('tbody'); tableBody.id = 'tableBody'; tbl.appendChild(tableBody);
-        wrapper.appendChild(tbl);
-        container.appendChild(wrapper);
-        appendRows(0, itemsToShow);
-    }
-}
-
-function renderSidebarGroups() {
-    const sideList = document.getElementById('sideGroupList');
-    const colIdx = 1; 
-    const groups = [...new Set(filteredIndices.map(idx => rawData[idx][colIdx]))].sort();
-    sideList.innerHTML = '';
-    const allDiv = document.createElement('div');
-    allDiv.className = 'supplier-card all-card ' + (currentGroup === 'ALL' ? 'active' : '');
-    allDiv.innerHTML = `<i class="fas fa-list"></i> &nbsp; ALL DATA`;
-    allDiv.onclick = () => {
-        document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
-        allDiv.classList.add('active');
-        renderDetailByGroup('ALL');
-    };
-    sideList.appendChild(allDiv);
-    groups.forEach(val => {
-        const div = document.createElement('div');
-        div.className = 'supplier-card ' + (currentGroup === val ? 'active' : '');
-        div.innerText = val || "(Kosong)";
-        div.onclick = () => {
-            document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
-            div.classList.add('active');
-            renderDetailByGroup(val);
-        };
-        sideList.appendChild(div);
-    });
-}
-
-function renderDetailByGroup(groupVal) {
-    currentGroup = groupVal;
-    itemsToShow = 30;
-    const sideDetail = document.getElementById('sideDataDetail');
-    if (!sideDetail) return;
-    sideDetail.innerHTML = '';
-    
-    dashboardRows = (groupVal === 'ALL') ? filteredIndices : filteredIndices.filter(idx => rawData[idx][1] === groupVal);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-wrapper';
+    wrapper.id = 'scrollWrapper';
+    wrapper.onscroll = handleTableScroll;
 
     const tbl = document.createElement('table');
-    const cg = document.createElement('colgroup');
-    const selCol = document.createElement('col'); selCol.style.width = '40px'; cg.appendChild(selCol);
+    colgroup = document.createElement('colgroup');
+    const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
     headers.forEach((_, i) => {
-        const col = document.createElement('col'); col.id = `detail-col-${i}`; col.style.width = colWidths[i] + 'px';
+        const col = document.createElement('col'); col.id = `col-${i}`; col.style.width = colWidths[i] + 'px';
         if (!visibleColumns.includes(i)) col.style.display = 'none';
-        cg.appendChild(col);
+        colgroup.appendChild(col);
     });
-    tbl.appendChild(cg);
+    tbl.appendChild(colgroup);
 
     const thead = document.createElement('thead');
     const hrow = document.createElement('tr');
@@ -400,32 +269,14 @@ function renderDetailByGroup(groupVal) {
     headers.forEach((h, i) => {
         const th = document.createElement('th'); th.textContent = h;
         if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-        const resizer = document.createElement('div'); resizer.className = 'resizer';
-        resizer.addEventListener('mousedown', e => initResize(e, i, true));
-        resizer.addEventListener('touchstart', e => initResize(e, i, true), { passive: false });
-        th.appendChild(resizer); hrow.appendChild(th);
+        hrow.appendChild(th);
     });
     thead.appendChild(hrow); tbl.appendChild(thead);
-    const tbody = document.createElement('tbody'); tbody.id = 'dashboardTableBody'; tbl.appendChild(tbody);
-    sideDetail.appendChild(tbl);
-    appendDashboardRows(0, itemsToShow);
-}
-
-function appendDashboardRows(fromIdx, toIdx) {
-    const tbody = document.getElementById('dashboardTableBody');
-    if (!tbody) return;
-    const limit = Math.min(dashboardRows.length, toIdx);
-    for (let i = fromIdx; i < limit; i++) tbody.appendChild(createRow(dashboardRows[i]));
-}
-
-function handleDashboardScroll() {
-    const wrap = document.getElementById('sideDataDetail');
-    if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
-        if (itemsToShow < dashboardRows.length) {
-            const start = itemsToShow; itemsToShow += 30;
-            appendDashboardRows(start, itemsToShow);
-        }
-    }
+    
+    tableBody = document.createElement('tbody'); tableBody.id = 'tableBody'; tbl.appendChild(tableBody);
+    wrapper.appendChild(tbl);
+    container.appendChild(wrapper);
+    appendRows(0, itemsToShow);
 }
 
 function handleTableScroll() {
@@ -446,29 +297,16 @@ function appendRows(fromIdx, toIdx) {
 function createRow(r) {
     const tr = document.createElement('tr'); tr.id = `tr-${r}`; tr.onclick = () => selectRow(r);
     if (selectedRowIndex === r) tr.classList.add('selected-row');
-    const tdSel = document.createElement('td'); tdSel.className = 'text-center';
+    const tdSel = document.createElement('td'); tdSel.style.textAlign = 'center';
     const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === r);
     tdSel.appendChild(radio); tr.appendChild(tdSel);
     rawData[r].forEach((cell, idx) => {
         const td = document.createElement('td');
         if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
-        const val = cell != null ? String(cell) : '';
-        const imgUrl = toDisplayableImgUrl(val);
-        if (imgUrl) {
-            const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell'; img.style.maxHeight = '25px';
-            td.appendChild(img);
-        } else td.textContent = val;
+        td.textContent = cell != null ? String(cell) : '';
         tr.appendChild(td);
     });
     return tr;
-}
-
-function toDisplayableImgUrl(url) {
-    if (!url || typeof url !== 'string' || !url.startsWith('http')) return null;
-    const ucMatch = url.match(/[?&]id=([\w-]+)/);
-    if (url.includes('drive.google.com') && ucMatch) return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=s80`;
-    if (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
-    return null;
 }
 
 function selectRow(index) {
@@ -481,41 +319,7 @@ function selectRow(index) {
     if (tr) { tr.classList.add('selected-row'); const rad = tr.querySelector('input[type="radio"]'); if(rad) rad.checked = true; }
 }
 
-async function fetchDependencies() {
-    try {
-        const [resSup, resIkan] = await Promise.all([
-            fetch(`${SCRIPT_URL}?action=read&sheet=Data Supplier`),
-            fetch(`${SCRIPT_URL}?action=read&sheet=Master Data Ikan`)
-        ]);
-        const sData = await resSup.json(), iData = await resIkan.json();
-        if(sData.status === 'success') document.getElementById('listSupplier').innerHTML = sData.data.slice(1).map(row => `<option value="${row[1]}">`).join('');
-        if(iData.status === 'success') document.getElementById('listFish').innerHTML = iData.data.slice(1).map(row => `<option value="${row[19]}">`).join(''); 
-    } catch(e) {}
-}
-
 function toggleFilterPanel(e) { e.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
-
-/** FIX: Fungsi Filter Kolom yang Sinkron **/
-function createFilterCheckboxes() {
-    const container = document.getElementById('filterCheckboxes'); container.innerHTML = '';
-    headers.forEach((h, i) => {
-        const lbl = document.createElement('label'); lbl.className = 'filter-item';
-        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = visibleColumns.includes(i);
-        cb.onchange = () => {
-            if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } else { visibleColumns = visibleColumns.filter(x=>x!==i); }
-            
-            // Refresh tampilan sesuai mode aktif
-            if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") {
-                renderDetailByGroup(currentGroup); 
-            } else {
-                buildTable();
-            }
-        };
-        lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
-    });
-}
-
-function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); }
 function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
 
 document.getElementById('searchInput').oninput = function() { searchQuery = this.value; rebuildFilteredIndices(); buildTable(); };
