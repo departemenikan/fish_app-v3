@@ -58,6 +58,10 @@
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
         th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
         td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+        
+        /* FIX: Class untuk menyembunyikan kolom */
+        .hidden-col { display: none !important; }
+
         .resizer { position: absolute; right: 0; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 11; }
         .resizer:hover { background: var(--neon); }
         tr.selected-row { background: rgba(0, 210, 255, 0.15) !important; }
@@ -293,7 +297,6 @@ function buildTable() {
 
         const sResizer = document.createElement('div');
         sResizer.className = 'sidebar-resizer';
-        // Add both mouse and touch listeners
         sResizer.addEventListener('mousedown', initSidebarResize);
         sResizer.addEventListener('touchstart', initSidebarResize, { passive: false });
 
@@ -308,7 +311,7 @@ function buildTable() {
         container.appendChild(layout);
 
         renderSidebarGroups();
-        renderDetailByGroup('ALL');
+        renderDetailByGroup(currentGroup || 'ALL');
     } else {
         const wrapper = document.createElement('div');
         wrapper.className = 'table-wrapper';
@@ -351,7 +354,7 @@ function renderSidebarGroups() {
     const groups = [...new Set(filteredIndices.map(idx => rawData[idx][colIdx]))].sort();
     sideList.innerHTML = '';
     const allDiv = document.createElement('div');
-    allDiv.className = 'supplier-card all-card active';
+    allDiv.className = 'supplier-card all-card ' + (currentGroup === 'ALL' ? 'active' : '');
     allDiv.innerHTML = `<i class="fas fa-list"></i> &nbsp; ALL DATA`;
     allDiv.onclick = () => {
         document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
@@ -361,7 +364,7 @@ function renderSidebarGroups() {
     sideList.appendChild(allDiv);
     groups.forEach(val => {
         const div = document.createElement('div');
-        div.className = 'supplier-card';
+        div.className = 'supplier-card ' + (currentGroup === val ? 'active' : '');
         div.innerText = val || "(Kosong)";
         div.onclick = () => {
             document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
@@ -376,7 +379,9 @@ function renderDetailByGroup(groupVal) {
     currentGroup = groupVal;
     itemsToShow = 30;
     const sideDetail = document.getElementById('sideDataDetail');
+    if (!sideDetail) return;
     sideDetail.innerHTML = '';
+    
     dashboardRows = (groupVal === 'ALL') ? filteredIndices : filteredIndices.filter(idx => rawData[idx][1] === groupVal);
 
     const tbl = document.createElement('table');
@@ -489,6 +494,8 @@ async function fetchDependencies() {
 }
 
 function toggleFilterPanel(e) { e.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
+
+/** FIX: Fungsi Filter Kolom yang Sinkron **/
 function createFilterCheckboxes() {
     const container = document.getElementById('filterCheckboxes'); container.innerHTML = '';
     headers.forEach((h, i) => {
@@ -496,11 +503,18 @@ function createFilterCheckboxes() {
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = visibleColumns.includes(i);
         cb.onchange = () => {
             if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } else { visibleColumns = visibleColumns.filter(x=>x!==i); }
-            buildTable();
+            
+            // Refresh tampilan sesuai mode aktif
+            if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") {
+                renderDetailByGroup(currentGroup); 
+            } else {
+                buildTable();
+            }
         };
         lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
     });
 }
+
 function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); }
 function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
 
