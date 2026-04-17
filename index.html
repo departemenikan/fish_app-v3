@@ -476,26 +476,5 @@ window.onclick = e => {
     if (p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
 };
 </script>
-    <script>
-  let lastTimeBackPress = 0;
-
-  // Menangani tombol back di Android
-  window.addEventListener('popstate', function (event) {
-      let currentTime = new Date().getTime();
-      
-      // Jika menekan tombol back dalam rentang waktu kurang dari 2 detik
-      if (currentTime - lastTimeBackPress < 2000) {
-          // Biarkan aplikasi menutup (iklan mungkin tetap muncul dari server WebIntoApp)
-      } else {
-          lastTimeBackPress = currentTime;
-          alert("Tekan sekali lagi untuk keluar");
-          // Dorong state kembali agar aplikasi tidak langsung tutup
-          history.pushState(null, null, window.location.pathname);
-      }
-  }, false);
-
-  // Inisialisasi state awal
-  history.pushState(null, null, window.location.pathname);
-</script>
 </body>
 </html>
