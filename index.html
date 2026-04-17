@@ -153,7 +153,7 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfCYQJGcR7IUY6QvnnCKritz0MTqKTgYfFd63jcznQhktCEUmg1jjnGbvcsSId661Q1A/exec";
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
-let filteredIndices = [], itemsToShow = 20, currentSheet = "", selectedRowIndex = null, searchQuery = "";
+let filteredIndices = [], itemsToShow = 30, currentSheet = "", selectedRowIndex = null, searchQuery = "";
 let tableBody = null, colgroup = null, currentMode = "";
 let dbSupplier = [], dbMasterIkan = [];
 
@@ -227,7 +227,7 @@ function handleTableScroll() {
     if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
         if (itemsToShow < filteredIndices.length) {
             const start = itemsToShow;
-            itemsToShow += 20;
+            itemsToShow += 30;
             appendRows(start, itemsToShow);
             updateRowCounter();
         }
@@ -235,7 +235,7 @@ function handleTableScroll() {
 }
 
 function buildTable() {
-    itemsToShow = 20;
+    itemsToShow = 30;
     const container = document.getElementById('tableContainer');
     const tbl = document.createElement('table');
     colgroup = document.createElement('colgroup');
