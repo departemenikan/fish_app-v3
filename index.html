@@ -468,13 +468,34 @@ async function handleDelete() {
 }
 
 document.getElementById('searchInput').oninput = function() {
-    searchQuery = this.value; rebuildFilteredIndices(); tableBody.innerHTML = ''; itemsToShow = 50; appendRows(0, itemsToShow);
+    searchQuery = this.value; rebuildFilteredIndices(); tableBody.innerHTML = ''; itemsToShow = 30; appendRows(0, itemsToShow);
 };
 
 window.onclick = e => {
     const p = document.getElementById('columnFilterPanel');
     if (p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
 };
+</script>
+    <script>
+  let lastTimeBackPress = 0;
+
+  // Menangani tombol back di Android
+  window.addEventListener('popstate', function (event) {
+      let currentTime = new Date().getTime();
+      
+      // Jika menekan tombol back dalam rentang waktu kurang dari 2 detik
+      if (currentTime - lastTimeBackPress < 2000) {
+          // Biarkan aplikasi menutup (iklan mungkin tetap muncul dari server WebIntoApp)
+      } else {
+          lastTimeBackPress = currentTime;
+          alert("Tekan sekali lagi untuk keluar");
+          // Dorong state kembali agar aplikasi tidak langsung tutup
+          history.pushState(null, null, window.location.pathname);
+      }
+  }, false);
+
+  // Inisialisasi state awal
+  history.pushState(null, null, window.location.pathname);
 </script>
 </body>
 </html>
