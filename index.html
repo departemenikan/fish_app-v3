@@ -45,7 +45,6 @@
         .side-list { width: 220px; border-right: 1px solid #222; overflow-y: auto; background: #050505; flex-shrink: 0; }
         .side-detail { flex: 1; overflow: auto; background: #000; position: relative; }
         
-        /* Sidebar Resizer UI */
         .sidebar-resizer { width: 6px; cursor: col-resize; background: #1a1a1a; flex-shrink: 0; z-index: 20; transition: background 0.2s; }
         .sidebar-resizer:hover { background: var(--neon); }
 
@@ -171,7 +170,8 @@ let rawData = [], headers = [], visibleColumns = [], colWidths = [];
 let filteredIndices = [], itemsToShow = 30, currentSheet = "", selectedRowIndex = null, searchQuery = "";
 let tableBody = null, colgroup = null, currentMode = "";
 let dbSupplier = [], dbMasterIkan = [];
-let sidebarWidth = 220; // Default sidebar width
+let sidebarWidth = 220;
+let dashboardRows = []; // Untuk menampung baris filter di mode dashboard
 
 function showLoader(msg) { const l = document.getElementById('loader'); l.innerText = msg || '⚡ LOADING...'; l.style.display = 'block'; }
 function hideLoader() { document.getElementById('loader').style.display = 'none'; }
@@ -179,13 +179,14 @@ function hideLoader() { document.getElementById('loader').style.display = 'none'
 async function openSheet(sheetName) {
     currentSheet = sheetName;
     selectedRowIndex = null;
+    itemsToShow = 30; // Reset pagination
     document.getElementById('tableContainer').innerHTML = '';
     showLoader();
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('homePageContent').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
     
-    if(sheetName === "Harga Supplier" || sheetName === "Data Supplier") {
+    if(sheetName === "Harga Supplier" || sheetName === "Data Supplier" || sheetName === "Master Data Ikan") {
         await fetchDependencies();
     }
     await loadData(sheetName);
@@ -217,12 +218,14 @@ async function loadData(sheet) {
             rawData = result.data;
             headers = rawData[0];
 
+            // Sort data untuk Harga Supplier (berdasar Supplier Name) atau Master Data Ikan (berdasar App Code)
+            const bodyRows = rawData.slice(1);
             if (sheet === "Harga Supplier") {
-                const headerRow = rawData[0];
-                const bodyRows = rawData.slice(1);
                 bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-                rawData = [headerRow, ...bodyRows];
+            } else if (sheet === "Master Data Ikan") {
+                bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
             }
+            rawData = [headers, ...bodyRows];
 
             const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
             visibleColumns = savedConfig ? savedConfig.split(',').map(Number) : headers.map((_, i) => i);
@@ -250,13 +253,13 @@ function buildTable() {
     const container = document.getElementById('tableContainer');
     container.innerHTML = '';
 
-    if (currentSheet === "Harga Supplier") {
+    if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") {
         const layout = document.createElement('div');
         layout.className = 'database-layout';
 
         const sideList = document.createElement('div');
         sideList.className = 'side-list';
-        sideList.id = 'sideSupplierList';
+        sideList.id = 'sideGroupList';
         sideList.style.width = sidebarWidth + 'px';
 
         const sResizer = document.createElement('div');
@@ -266,14 +269,15 @@ function buildTable() {
         const sideDetail = document.createElement('div');
         sideDetail.className = 'side-detail';
         sideDetail.id = 'sideDataDetail';
+        sideDetail.onscroll = handleDashboardScroll; // Scroll for Dashboard
 
         layout.appendChild(sideList);
         layout.appendChild(sResizer);
         layout.appendChild(sideDetail);
         container.appendChild(layout);
 
-        renderSupplierListSide();
-        renderDetailBySupplier('ALL');
+        renderSidebarGroups();
+        renderDetailByGroup('ALL');
     } else {
         const wrapper = document.createElement('div');
         wrapper.className = 'table-wrapper';
@@ -309,61 +313,62 @@ function buildTable() {
     }
 }
 
-// Fitur Baru: Resizer Sidebar
 function initSidebarResize(e) {
     e.preventDefault();
     const startX = e.pageX;
     const startWidth = sidebarWidth;
-    const sideList = document.getElementById('sideSupplierList');
-    
+    const sideList = document.getElementById('sideGroupList');
     const doResize = m => {
         sidebarWidth = Math.max(50, startWidth + (m.pageX - startX));
         sideList.style.width = sidebarWidth + 'px';
     };
-    const stop = () => {
-        document.removeEventListener('mousemove', doResize);
-        document.removeEventListener('mouseup', stop);
-    };
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stop);
+    const stop = () => { document.removeEventListener('mousemove', doResize); document.removeEventListener('mouseup', stop); };
+    document.addEventListener('mousemove', doResize); document.addEventListener('mouseup', stop);
 }
 
-function renderSupplierListSide() {
-    const sideList = document.getElementById('sideSupplierList');
-    const activeSuppliers = [...new Set(filteredIndices.map(idx => rawData[idx][1]))].sort();
+function renderSidebarGroups() {
+    const sideList = document.getElementById('sideGroupList');
+    const colIdx = currentSheet === "Harga Supplier" ? 1 : 1; // Sama-sama Kolom B (Index 1)
+    const groups = [...new Set(filteredIndices.map(idx => rawData[idx][colIdx]))].sort();
 
     sideList.innerHTML = '';
 
     const allDiv = document.createElement('div');
     allDiv.className = 'supplier-card all-card active';
-    allDiv.innerHTML = '<i class="fas fa-list"></i> &nbsp; ALL SUPPLIERS';
+    allDiv.innerHTML = `<i class="fas fa-list"></i> &nbsp; ALL ${currentSheet === "Master Data Ikan" ? 'APP CODES' : 'SUPPLIERS'}`;
     allDiv.onclick = () => {
         document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
         allDiv.classList.add('active');
-        renderDetailBySupplier('ALL');
+        renderDetailByGroup('ALL');
     };
     sideList.appendChild(allDiv);
 
-    activeSuppliers.forEach(sup => {
+    groups.forEach(val => {
         const div = document.createElement('div');
         div.className = 'supplier-card';
-        div.innerText = sup;
+        div.innerText = val || "(Kosong)";
         div.onclick = () => {
             document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
             div.classList.add('active');
-            renderDetailBySupplier(sup);
+            renderDetailByGroup(val);
         };
         sideList.appendChild(div);
     });
 }
 
-function renderDetailBySupplier(supName) {
+let currentGroup = 'ALL';
+function renderDetailByGroup(groupVal) {
+    currentGroup = groupVal;
+    itemsToShow = 30; // Reset lazy load
     const sideDetail = document.getElementById('sideDataDetail');
     sideDetail.innerHTML = '';
     
+    const colIdx = 1;
+    dashboardRows = (groupVal === 'ALL') 
+                    ? filteredIndices 
+                    : filteredIndices.filter(idx => rawData[idx][colIdx] === groupVal);
+
     const tbl = document.createElement('table');
-    
-    // Penambahan Colgroup agar resizer kolom bekerja di Harga Supplier
     const cg = document.createElement('colgroup');
     const selCol = document.createElement('col'); selCol.style.width = '40px'; cg.appendChild(selCol);
     headers.forEach((_, i) => {
@@ -376,55 +381,47 @@ function renderDetailBySupplier(supName) {
     tbl.appendChild(cg);
 
     const thead = document.createElement('thead');
-    const tbody = document.createElement('tbody');
-
     const hrow = document.createElement('tr');
     const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
     headers.forEach((h, i) => {
         const th = document.createElement('th'); 
         th.textContent = h;
         if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-        
-        // Penambahan element resizer di header
         const resizer = document.createElement('div'); 
         resizer.className = 'resizer';
         resizer.addEventListener('mousedown', e => initResize(e, i, true));
         th.appendChild(resizer);
-        
         hrow.appendChild(th);
     });
     thead.appendChild(hrow);
+    tbl.appendChild(thead);
 
-    const supRows = (supName === 'ALL') 
-                    ? filteredIndices 
-                    : filteredIndices.filter(idx => rawData[idx][1] === supName);
-
-    supRows.forEach(rowIndex => {
-        const tr = document.createElement('tr');
-        tr.id = `tr-${rowIndex}`;
-        tr.onclick = () => selectRow(rowIndex);
-        if (selectedRowIndex === rowIndex) tr.classList.add('selected-row');
-
-        const tdSel = document.createElement('td'); tdSel.className = 'text-center';
-        const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === rowIndex);
-        tdSel.appendChild(radio); tr.appendChild(tdSel);
-
-        rawData[rowIndex].forEach((cell, idx) => {
-            const td = document.createElement('td');
-            if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
-            const val = cell != null ? String(cell) : '';
-            const imgUrl = toDisplayableImgUrl(val);
-            if (imgUrl) {
-                const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
-                td.appendChild(img);
-            } else td.textContent = val;
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-
-    tbl.appendChild(thead); tbl.appendChild(tbody);
+    const tbody = document.createElement('tbody');
+    tbody.id = 'dashboardTableBody';
+    tbl.appendChild(tbody);
     sideDetail.appendChild(tbl);
+
+    appendDashboardRows(0, itemsToShow);
+}
+
+function appendDashboardRows(fromIdx, toIdx) {
+    const tbody = document.getElementById('dashboardTableBody');
+    if (!tbody) return;
+    const limit = Math.min(dashboardRows.length, toIdx);
+    for (let i = fromIdx; i < limit; i++) {
+        tbody.appendChild(createRow(dashboardRows[i]));
+    }
+}
+
+function handleDashboardScroll() {
+    const wrap = document.getElementById('sideDataDetail');
+    if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
+        if (itemsToShow < dashboardRows.length) {
+            const start = itemsToShow;
+            itemsToShow += 30;
+            appendDashboardRows(start, itemsToShow);
+        }
+    }
 }
 
 function handleTableScroll() {
@@ -489,13 +486,11 @@ function selectRow(index) {
     }
 }
 
-// Modifikasi fungsi initResize agar mendukung mode Dashboard (Harga Supplier)
 function initResize(e, i, isDashboard = false) {
     e.stopPropagation();
     const startX = e.pageX, startWidth = colWidths[i];
     const colId = isDashboard ? `detail-col-${i}` : `col-${i}`;
     const targetCol = document.getElementById(colId);
-    
     const doResize = m => { 
         const nW = Math.max(20, startWidth + (m.pageX - startX)); 
         colWidths[i] = nW; 
@@ -622,7 +617,6 @@ async function handleSave() {
         const el = document.getElementById(`field-${i}`);
         return el ? el.value : "";
     });
-    if (currentSheet === "Data Supplier" && dataSave[0] === "") { alert("ID Supplier kosong! Harap ulangi."); return; }
     showLoader('⚡ MENGIRIM DATA KE SPREADSHEET...');
     try {
         const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: currentMode === 'edit' ? selectedRowIndex : null, data: dataSave }) });
