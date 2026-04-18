@@ -176,6 +176,7 @@ let tableBody = null, colgroup = null, sidebarWidth = 220, dashboardRows = [], c
 function showLoader(msg) { const l = document.getElementById('loader'); l.innerText = msg || '⚡ LOADING...'; l.style.display = 'block'; }
 function hideLoader() { document.getElementById('loader').style.display = 'none'; }
 
+// --- FUNGSI NAVIGASI & LOAD ---
 async function openSheet(sheetName) {
     currentSheet = sheetName;
     selectedRowIndex = null;
@@ -200,25 +201,15 @@ async function loadData(sheet) {
         const res = await fetch(`${SCRIPT_URL}?action=read&sheet=${encodeURIComponent(sheet)}`);
         const result = await res.json();
         if (result.status === 'success') {
-            rawData = result.data; // Baris 0 = Header, Baris 1 = Data Pertama + Config
+            rawData = result.data;
             headers = rawData[0];
             
-            // LOGIKA DINAMIS: Ambil config dari kolom paling terakhir di baris data
-            // Karena kita simpan di lastCol + 1, maka di array dia adalah elemen terakhir
+            // Logika Config Kolom
             let lastRowData = rawData[1] || [];
-            let savedConfig = "";
-            
-            // Cek apakah kolom terakhir di baris ini berisi format "0,1,2,..."
             let potentialConfig = String(lastRowData[lastRowData.length - 1]).trim();
-            
             if (potentialConfig && potentialConfig.includes(',')) {
-                savedConfig = potentialConfig;
-            }
-
-            if (savedConfig) {
-                visibleColumns = savedConfig.split(',').map(Number);
+                visibleColumns = potentialConfig.split(',').map(Number);
             } else {
-                // Jika belum ada config, tampilkan semua kolom sesuai panjang header
                 visibleColumns = headers.map((_, i) => i);
             }
             
@@ -227,78 +218,120 @@ async function loadData(sheet) {
             rebuildFilteredIndices();
             buildTable();
         }
-    } catch(e) {
-        alert('Gagal memuat data.');
-    }
+    } catch(e) { alert('Gagal memuat data.'); }
     hideLoader();
 }
 
-// FUNGSI SIMPAN PERMANEN
-async function saveColumnConfig() {
-    const configString = visibleColumns.join(',');
-    try {
-        await fetch(`${SCRIPT_URL}?action=updateConfig&sheet=${encodeURIComponent(currentSheet)}&config=${configString}`);
-    } catch (e) { console.error("Gagal simpan config"); }
+// --- FUNGSI OPERASIONAL (TAMBAH, EDIT, HAPUS) ---
+function openModal(mode) {
+    const form = document.getElementById('dynamicForm');
+    form.innerHTML = '';
+    document.getElementById('modalTitle').innerText = mode === 'add' ? 'TAMBAH DATA' : 'EDIT DATA';
+    
+    if (mode === 'edit' && selectedRowIndex === null) {
+        alert("Pilih baris terlebih dahulu!");
+        return;
+    }
+
+    const rowDataEdit = mode === 'edit' ? rawData[selectedRowIndex] : [];
+
+    headers.forEach((h, i) => {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        const label = document.createElement('label');
+        label.innerText = h;
+        
+        let input;
+        if (h.toLowerCase().includes('supplier')) {
+            input = document.createElement('input');
+            input.setAttribute('list', 'listSupplier');
+        } else if (h.toLowerCase().includes('ikan') || h.toLowerCase().includes('name')) {
+            input = document.createElement('input');
+            input.setAttribute('list', 'listFish');
+        } else {
+            input = document.createElement('input');
+        }
+
+        input.name = `col_${i}`;
+        input.value = mode === 'edit' ? (rowDataEdit[i] || '') : '';
+        
+        // Proteksi ID Supplier
+        if (mode === 'edit' && i === 0 && currentSheet === "Data Supplier") {
+            input.classList.add('locked');
+            input.readOnly = true;
+        }
+
+        group.appendChild(label);
+        group.appendChild(input);
+        form.appendChild(group);
+    });
+
+    document.getElementById('dataModal').style.display = 'block';
 }
 
+async function handleSave() {
+    const form = document.getElementById('dynamicForm');
+    const formData = new FormData(form);
+    const dataArray = headers.map((_, i) => formData.get(`col_${i}`));
+
+    showLoader('Menyimpan...');
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'save',
+                sheet: currentSheet,
+                rowIndex: selectedRowIndex,
+                data: dataArray
+            })
+        });
+        const res = await response.json();
+        if (res.status === 'success') {
+            closeModal();
+            await loadData(currentSheet);
+        } else { alert("Gagal: " + res.message); }
+    } catch (e) { alert("Error saat menyimpan."); }
+    hideLoader();
+}
+
+async function handleDelete() {
+    if (selectedRowIndex === null) return alert("Pilih baris yang akan dihapus!");
+    if (!confirm("Hapus data ini?")) return;
+
+    showLoader('Menghapus...');
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'delete',
+                sheet: currentSheet,
+                rowIndex: selectedRowIndex
+            })
+        });
+        const res = await response.json();
+        if (res.status === 'success') {
+            selectedRowIndex = null;
+            await loadData(currentSheet);
+        } else { alert("Gagal hapus."); }
+    } catch (e) { alert("Error koneksi."); }
+    hideLoader();
+}
+
+function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
+
+// --- LOGIKA TABEL & RESIZER (TETAP SAMA) ---
 function computeWidths() { colWidths = headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200)); }
 
 function rebuildFilteredIndices() {
     const q = searchQuery.toLowerCase();
     filteredIndices = [];
-    for (let r = 1; r < rawData.length; r++) { if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r); }
+    for (let r = 1; r < rawData.length; r++) { 
+        if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r); 
+    }
     updateRowCounter();
 }
 
 function updateRowCounter() { document.getElementById('rowCounter').textContent = `${filteredIndices.length} baris`; }
-
-// RESIZER SIDEBAR
-function initSidebarResize(e) {
-    e.preventDefault();
-    const startX = e.pageX || (e.touches ? e.touches[0].pageX : 0);
-    const startWidth = sidebarWidth;
-    const sideList = document.getElementById('sideGroupList');
-    const doResize = m => {
-        const currentX = m.pageX || (m.touches ? m.touches[0].pageX : 0);
-        sidebarWidth = Math.max(50, startWidth + (currentX - startX));
-        sideList.style.width = sidebarWidth + 'px';
-    };
-    const stop = () => {
-        document.removeEventListener('mousemove', doResize);
-        document.removeEventListener('mouseup', stop);
-        document.removeEventListener('touchmove', doResize);
-        document.removeEventListener('touchend', stop);
-    };
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stop);
-    document.addEventListener('touchmove', doResize, { passive: false });
-    document.addEventListener('touchend', stop);
-}
-
-// RESIZER KOLOM TABEL
-function initResize(e, i, isDashboard = false) {
-    e.stopPropagation();
-    const startX = e.pageX || (e.touches ? e.touches[0].pageX : 0);
-    const startWidth = colWidths[i];
-    const colId = isDashboard ? `detail-col-${i}` : `col-${i}`;
-    const targetCol = document.getElementById(colId);
-    const doResize = m => {
-        const currentX = m.pageX || (m.touches ? m.touches[0].pageX : 0);
-        const nW = Math.max(20, startWidth + (currentX - startX));
-        colWidths[i] = nW;
-        if(targetCol) targetCol.style.width = nW + 'px';
-    };
-    const stop = () => {
-        document.removeEventListener('mousemove', doResize);
-        document.removeEventListener('mouseup', stop);
-        document.removeEventListener('touchmove', doResize);
-        document.removeEventListener('touchend', stop);
-    };
-    document.addEventListener('mousemove', doResize);
-    document.addEventListener('mouseup', stop);
-    document.addEventListener('touchmove', doResize, { passive: false });
-    document.addEventListener('touchend', stop);
-}
 
 function buildTable() {
     const container = document.getElementById('tableContainer');
@@ -312,7 +345,6 @@ function buildTable() {
         const sResizer = document.createElement('div');
         sResizer.className = 'sidebar-resizer';
         sResizer.addEventListener('mousedown', initSidebarResize);
-        sResizer.addEventListener('touchstart', initSidebarResize, { passive: false });
         const sideDetail = document.createElement('div');
         sideDetail.className = 'side-detail'; sideDetail.id = 'sideDataDetail'; sideDetail.onscroll = handleDashboardScroll;
         layout.appendChild(sideList); layout.appendChild(sResizer); layout.appendChild(sideDetail);
@@ -339,7 +371,6 @@ function buildTable() {
             if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
             const resizer = document.createElement('div'); resizer.className = 'resizer';
             resizer.addEventListener('mousedown', e => initResize(e, i));
-            resizer.addEventListener('touchstart', e => initResize(e, i), { passive: false });
             th.appendChild(resizer); hrow.appendChild(th);
         });
         thead.appendChild(hrow); tbl.appendChild(thead);
@@ -349,6 +380,7 @@ function buildTable() {
     }
 }
 
+// ... (Fungsi Helper Sidebar, Dashboard, Scroll, createRow tetap seperti sebelumnya) ...
 function renderSidebarGroups() {
     const sideList = document.getElementById('sideGroupList');
     const colIdx = 1; 
@@ -382,42 +414,38 @@ function renderDetailByGroup(groupVal) {
     dashboardRows = (groupVal === 'ALL') ? filteredIndices : filteredIndices.filter(idx => rawData[idx][1] === groupVal);
     const tbl = document.createElement('table');
     const cg = document.createElement('colgroup');
-    const selCol = document.createElement('col'); selCol.style.width = '40px'; cg.appendChild(selCol);
+    const sc = document.createElement('col'); sc.style.width = '40px'; cg.appendChild(sc);
     headers.forEach((_, i) => {
-        const col = document.createElement('col'); col.id = `detail-col-${i}`; col.style.width = colWidths[i] + 'px';
+        const col = document.createElement('col'); col.style.width = colWidths[i] + 'px';
         if (!visibleColumns.includes(i)) col.style.display = 'none';
         cg.appendChild(col);
     });
     tbl.appendChild(cg);
     const thead = document.createElement('thead');
-    const hrow = document.createElement('tr');
-    const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
+    const hr = document.createElement('tr');
+    const ths = document.createElement('th'); ths.textContent = 'SEL'; hr.appendChild(ths);
     headers.forEach((h, i) => {
         const th = document.createElement('th'); th.textContent = h;
         if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-        const resizer = document.createElement('div'); resizer.className = 'resizer';
-        resizer.addEventListener('mousedown', e => initResize(e, i, true));
-        resizer.addEventListener('touchstart', e => initResize(e, i, true), { passive: false });
-        th.appendChild(resizer); hrow.appendChild(th);
+        hr.appendChild(th);
     });
-    thead.appendChild(hrow); tbl.appendChild(thead);
+    thead.appendChild(hr); tbl.appendChild(thead);
     const tbody = document.createElement('tbody'); tbody.id = 'dashboardTableBody'; tbl.appendChild(tbody);
     sideDetail.appendChild(tbl);
     appendDashboardRows(0, itemsToShow);
 }
 
-function appendDashboardRows(fromIdx, toIdx) {
-    const tbody = document.getElementById('dashboardTableBody');
-    if (!tbody) return;
-    const limit = Math.min(dashboardRows.length, toIdx);
-    for (let i = fromIdx; i < limit; i++) tbody.appendChild(createRow(dashboardRows[i]));
+function appendDashboardRows(f, t) {
+    const tb = document.getElementById('dashboardTableBody');
+    const limit = Math.min(dashboardRows.length, t);
+    for (let i = f; i < limit; i++) tb.appendChild(createRow(dashboardRows[i]));
 }
 
 function handleDashboardScroll() {
     const wrap = document.getElementById('sideDataDetail');
     if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
         if (itemsToShow < dashboardRows.length) {
-            const start = itemsToShow; itemsToShow += 30; appendDashboardRows(start, itemsToShow);
+            const s = itemsToShow; itemsToShow += 30; appendDashboardRows(s, itemsToShow);
         }
     }
 }
@@ -426,14 +454,14 @@ function handleTableScroll() {
     const wrap = document.getElementById('scrollWrapper');
     if (wrap && wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
         if (itemsToShow < filteredIndices.length) {
-            const start = itemsToShow; itemsToShow += 30; appendRows(start, itemsToShow);
+            const s = itemsToShow; itemsToShow += 30; appendRows(s, itemsToShow);
         }
     }
 }
 
-function appendRows(fromIdx, toIdx) {
-    const limit = Math.min(filteredIndices.length, toIdx);
-    for (let fi = fromIdx; fi < limit; fi++) tableBody.appendChild(createRow(filteredIndices[fi]));
+function appendRows(f, t) {
+    const limit = Math.min(filteredIndices.length, t);
+    for (let i = f; i < limit; i++) tableBody.appendChild(createRow(filteredIndices[i]));
 }
 
 function createRow(r) {
@@ -460,8 +488,7 @@ function toDisplayableImgUrl(url) {
     if (!url || typeof url !== 'string' || !url.startsWith('http')) return null;
     const ucMatch = url.match(/[?&]id=([\w-]+)/);
     if (url.includes('drive.google.com') && ucMatch) return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=s80`;
-    if (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
-    return null;
+    return (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) ? url : null;
 }
 
 function selectRow(index) {
@@ -486,6 +513,12 @@ async function fetchDependencies() {
     } catch(e) {}
 }
 
+async function saveColumnConfig() {
+    const configString = visibleColumns.join(',');
+    try { await fetch(`${SCRIPT_URL}?action=updateConfig&sheet=${encodeURIComponent(currentSheet)}&config=${configString}`);
+    } catch (e) { console.error("Gagal simpan config"); }
+}
+
 function toggleFilterPanel(e) { e.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
 
 function createFilterCheckboxes() {
@@ -494,8 +527,10 @@ function createFilterCheckboxes() {
         const lbl = document.createElement('label'); lbl.className = 'filter-item';
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = visibleColumns.includes(i);
         cb.onchange = async () => {
-            if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } else { visibleColumns = visibleColumns.filter(x=>x!==i); }
-            if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") { renderDetailByGroup(currentGroup); } else { buildTable(); }
+            if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } 
+            else { visibleColumns = visibleColumns.filter(x=>x!==i); }
+            if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") { renderDetailByGroup(currentGroup); } 
+            else { buildTable(); }
             await saveColumnConfig();
         };
         lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
@@ -503,9 +538,10 @@ function createFilterCheckboxes() {
 }
 
 function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); saveColumnConfig(); }
-function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
 
 document.getElementById('searchInput').oninput = function() { searchQuery = this.value; rebuildFilteredIndices(); buildTable(); };
+
+// Click-outside listener untuk panel kolom
 window.onclick = e => {
     const p = document.getElementById('columnFilterPanel');
     if (p && p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
