@@ -136,7 +136,7 @@
 </header>
 
 <section id="homePageContent">
-    <img src="https://lh3.googleusercontent.com/d/1ljvtr5v8JjN-jot22F3vJgTu3zjxksDt" alt="Fish App Logo" class="home-logo">
+    <img src="Home_Image.png" alt="Fish App Logo" class="home-logo">
 </section>
 
 <section id="databaseSection">
@@ -158,7 +158,7 @@
 </section>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAINXktjnQznwq9k_zN5hk7tcyOyCfshsmkbQmSg6w71PQsqUX8TXDokmOhLbpSbMJrQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPrhua49b3bTBms-KqE7BQVDoWkH-g4qtoXqU3I1W1WzwEu_NEPpP3lp0ebV8922hiGg/exec";
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
 let filteredIndices = [], itemsToShow = 30, currentSheet = "", selectedRowIndex = null, searchQuery = "";
@@ -277,7 +277,7 @@ function renderSidebarGroups() {
     sideList.innerHTML = '';
     const allDiv = document.createElement('div');
     allDiv.className = 'supplier-card all-card ' + (currentGroup === 'ALL' ? 'active' : '');
-    allDiv.innerHTML = `<i class="fas fa-list"></i> &nbsp; ALL DATA`;
+    allDiv.innerHTML = `<i class="fas fa-list"></i>   ALL DATA`;
     allDiv.onclick = () => { document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active')); allDiv.classList.add('active'); renderDetailByGroup('ALL'); };
     sideList.appendChild(allDiv);
     groups.forEach(val => {
@@ -419,7 +419,6 @@ function openModal(mode) {
     const rowDataEdit = mode === 'edit' ? rawData[selectedRowIndex] : [];
 
     headers.forEach((h, i) => {
-        // Jangan munculkan kolom Config atau Kolom Kosong
         if (!h || h.toLowerCase().includes('config')) return;
 
         const group = document.createElement('div');
@@ -432,7 +431,6 @@ function openModal(mode) {
         input.id = `input_col_${i}`;
         input.value = mode === 'edit' ? (rowDataEdit[i] || '') : '';
 
-        // Deteksi Dropdown & Autofill Logic
         if (h.toLowerCase() === 'nama supplier') {
             input.setAttribute('list', 'listSupplier');
             input.oninput = () => handleAutofillLogic(input.value, 'supplier');
@@ -441,14 +439,12 @@ function openModal(mode) {
             input.oninput = () => handleAutofillLogic(input.value, 'fish');
         }
 
-        // Field Locking (Khusus Harga Supplier)
         const lockedFields = ['id supplier', 'code it', 'scientific name', 'category', 'group', 'origin'];
         if (lockedFields.includes(h.toLowerCase()) && currentSheet === "Harga Supplier") {
             input.classList.add('locked');
             input.readOnly = true;
         }
         
-        // Khusus ID Data Supplier tetap locked saat edit
         if (mode === 'edit' && h.toLowerCase() === 'id' && currentSheet === "Data Supplier") {
             input.classList.add('locked');
             input.readOnly = true;
@@ -492,9 +488,6 @@ function handleAutofillLogic(query, type) {
 
 async function handleSave() {
     const form = document.getElementById('dynamicForm');
-    const formData = new FormData(form);
-    
-    // Sinkronisasi data form dengan struktur header asli agar kolom tidak bergeser
     const dataSave = headers.map((h, i) => {
         const el = document.getElementById(`input_col_${i}`);
         return el ? el.value : (currentMode === 'edit' ? rawData[selectedRowIndex][i] : "");
@@ -519,7 +512,6 @@ async function handleSave() {
             alert('Error: ' + result.message); 
         }
     } catch(e) { 
-        // Fallback jika terjadi CORS tetapi data sebenarnya masuk
         setTimeout(async () => { await loadData(currentSheet); closeModal(); hideLoader(); }, 1500);
     } finally { 
         hideLoader(); 
