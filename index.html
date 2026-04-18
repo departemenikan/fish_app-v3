@@ -40,32 +40,38 @@
         #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
         #searchInput { width: 180px; padding: 6px 10px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
         #rowCounter { font-size: 10px; color: #777; white-space: nowrap; margin-right: 10px; }
+        
         .database-layout { display: flex; height: calc(100vh - 130px); overflow: hidden; }
         .side-list { width: 220px; border-right: 1px solid #222; overflow-y: auto; background: #050505; flex-shrink: 0; }
         .side-detail { flex: 1; overflow: auto; background: #000; position: relative; }
-        .sidebar-resizer { width: 10px; cursor: col-resize; background: #1a1a1a; flex-shrink: 0; z-index: 20; transition: background 0.2s; position: relative; }
-        .sidebar-resizer::after { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 2px; height: 30px; background: #333; border-radius: 2px; }
+        
+        .sidebar-resizer { width: 6px; cursor: col-resize; background: #1a1a1a; flex-shrink: 0; z-index: 20; transition: background 0.2s; }
         .sidebar-resizer:hover { background: var(--neon); }
+
         .supplier-card { padding: 12px 15px; border-bottom: 1px solid #1a1a1a; cursor: pointer; font-size: 11px; color: #888; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .supplier-card:hover { background: #111; color: var(--neon); }
         .supplier-card.active { background: #111; color: var(--neon); border-left: 3px solid var(--neon); font-weight: bold; }
         .all-card { color: var(--green); border-bottom: 2px solid #222; font-weight: bold; }
+
         .table-wrapper { overflow: auto; height: calc(100vh - 130px); width: 100%; position: relative; }
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
         th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
         td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-        .hidden-col { display: none !important; }
-        .resizer { position: absolute; right: 0; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 11; }
+        .resizer { position: absolute; right: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 11; }
         .resizer:hover { background: var(--neon); }
         tr.selected-row { background: rgba(0, 210, 255, 0.15) !important; }
-        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; backdrop-filter: blur(4px); }
         .modal-content { background: #111; border: 1px solid var(--neon); width: 90%; max-width: 450px; margin: 20px auto; padding: 25px; border-radius: 8px; max-height: 85vh; overflow-y: auto; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 10px; color: var(--neon); margin-bottom: 4px; text-transform: uppercase; }
         .form-group input, .form-group select { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; font-size: 11px; }
         .form-group input.locked { background: #1a1a1a; color: #888; border: 1px solid #222; }
-        .img-cell { max-height: 25px; vertical-align: middle; }
+        .img-preview { max-width: 150px; margin-top: 5px; border: 1px solid var(--neon); display: none; }
+        .img-cell { max-height: 25px; width: auto; display: block; margin: 0 auto; border-radius: 2px; }
+        .hidden-col { display: none; }
+        .text-center { text-align: center !important; }
+        #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
     </style>
 </head>
 <body>
@@ -141,13 +147,13 @@
 
 <section id="databaseSection">
     <div class="controls">
-        <button onclick="goHome()" class="btn btn-home" title="HOME"><i class="fas fa-home"></i></button>
-        <button onclick="openModal('add')" class="btn btn-add" title="TAMBAH"><i class="fas fa-plus"></i></button>
-        <button onclick="openModal('edit')" class="btn btn-edit" title="EDIT"><i class="fas fa-pen"></i></button>
-        <button onclick="handleDelete()" class="btn btn-delete" title="HAPUS"><i class="fas fa-trash-alt"></i></button> 
-        <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol"><i class="fas fa-columns"></i></button>
+        <button onclick="goHome()" class="btn btn-home" title="KEMBALI KE HOME"><i class="fas fa-home"></i></button>
+        <button onclick="openModal('add')" class="btn btn-add" title="TAMBAH DATA BARU"><i class="fas fa-plus"></i></button>
+        <button onclick="openModal('edit')" class="btn btn-edit" title="EDIT DATA TERPILIH"><i class="fas fa-pen"></i></button>
+        <button onclick="handleDelete()" class="btn btn-delete" title="HAPUS DATA TERPILIH"><i class="fas fa-trash-alt"></i></button> 
+        <button onclick="toggleFilterPanel(event)" class="btn btn-col" id="btnFilterCol" title="PENGATURAN KOLOM"><i class="fas fa-columns"></i></button>
         <div id="columnFilterPanel"><div id="filterCheckboxes"></div></div>
-        <button onclick="resetWidths()" class="btn btn-reset"><i class="fas fa-sync-alt"></i></button>
+        <button onclick="resetWidths()" class="btn btn-reset" title="RESET LEBAR KOLOM"><i class="fas fa-sync-alt"></i></button>
         <span style="flex:1"></span>
         <span id="rowCounter"></span>
         <input type="search" id="searchInput" placeholder="Cari data...">
@@ -162,8 +168,10 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfCYQJGcR7IUY6QvnnC
 
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
 let filteredIndices = [], itemsToShow = 30, currentSheet = "", selectedRowIndex = null, searchQuery = "";
-let tableBody = null, colgroup = null, sidebarWidth = 220, dashboardRows = [], currentGroup = 'ALL';
-let fullDataSupplier = [], fullMasterIkan = []; // Simpan data utuh untuk autofill
+let tableBody = null, colgroup = null, currentMode = "";
+let dbSupplier = [], dbMasterIkan = [];
+let sidebarWidth = 220;
+let dashboardRows = []; // Untuk menampung baris filter di mode dashboard
 
 function showLoader(msg) { const l = document.getElementById('loader'); l.innerText = msg || '⚡ LOADING...'; l.style.display = 'block'; }
 function hideLoader() { document.getElementById('loader').style.display = 'none'; }
@@ -171,21 +179,36 @@ function hideLoader() { document.getElementById('loader').style.display = 'none'
 async function openSheet(sheetName) {
     currentSheet = sheetName;
     selectedRowIndex = null;
-    itemsToShow = 30;
+    itemsToShow = 30; // Reset pagination
     document.getElementById('tableContainer').innerHTML = '';
     showLoader();
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('homePageContent').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
-    await fetchDependencies();
+    
+    if(sheetName === "Harga Supplier" || sheetName === "Data Supplier" || sheetName === "Master Data Ikan") {
+        await fetchDependencies();
+    }
     await loadData(sheetName);
 }
 
-function goHome() { 
-    document.getElementById('mainHeader').style.display = 'block'; 
-    document.getElementById('homePageContent').style.display = 'flex'; 
-    document.getElementById('databaseSection').style.display = 'none'; 
+async function fetchDependencies() {
+    try {
+        const [resSup, resIkan] = await Promise.all([
+            fetch(`${SCRIPT_URL}?action=read&sheet=Data Supplier`),
+            fetch(`${SCRIPT_URL}?action=read&sheet=Master Data Ikan`)
+        ]);
+        const sData = await resSup.json();
+        const iData = await resIkan.json();
+        if(sData.status === 'success') dbSupplier = sData.data;
+        if(iData.status === 'success') dbMasterIkan = iData.data;
+
+        document.getElementById('listSupplier').innerHTML = dbSupplier.slice(1).map(row => `<option value="${row[1]}">`).join('');
+        document.getElementById('listFish').innerHTML = dbMasterIkan.slice(1).map(row => `<option value="${row[19]}">`).join(''); 
+    } catch(e) { console.error("Gagal ambil dependensi"); }
 }
+
+function goHome() { document.getElementById('mainHeader').style.display = 'block'; document.getElementById('homePageContent').style.display = 'flex'; document.getElementById('databaseSection').style.display = 'none'; }
 
 async function loadData(sheet) {
     try {
@@ -194,302 +217,250 @@ async function loadData(sheet) {
         if (result.status === 'success') {
             rawData = result.data;
             headers = rawData[0];
-            let lastRowData = rawData[1] || [];
-            let potentialConfig = String(lastRowData[lastRowData.length - 1]).trim();
-            if (potentialConfig && potentialConfig.includes(',')) {
-                visibleColumns = potentialConfig.split(',').map(Number);
-            } else {
-                visibleColumns = headers.map((_, i) => i);
+
+            // Sort data untuk Harga Supplier (berdasar Supplier Name) atau Master Data Ikan (berdasar App Code)
+            const bodyRows = rawData.slice(1);
+            if (sheet === "Harga Supplier") {
+                bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+            } else if (sheet === "Master Data Ikan") {
+                bodyRows.sort((a, b) => String(a[1]).localeCompare(String(b[1])));
             }
+            rawData = [headers, ...bodyRows];
+
+            const savedConfig = (rawData[1] && rawData[1][22]) ? String(rawData[1][22]) : "";
+            visibleColumns = savedConfig ? savedConfig.split(',').map(Number) : headers.map((_, i) => i);
             computeWidths();
             createFilterCheckboxes();
             rebuildFilteredIndices();
             buildTable();
         }
-    } catch(e) { alert('Gagal memuat data.'); }
+    } catch(e) { alert('Gagal koneksi.'); }
     hideLoader();
 }
-
-// --- FUNGSI MODAL DENGAN LOGIKA AUTOFILL ---
-function openModal(mode) {
-    const form = document.getElementById('dynamicForm');
-    form.innerHTML = '';
-    document.getElementById('modalTitle').innerText = mode === 'add' ? 'TAMBAH DATA' : 'EDIT DATA';
-    
-    if (mode === 'edit' && selectedRowIndex === null) {
-        alert("Pilih baris terlebih dahulu!");
-        return;
-    }
-
-    const rowDataEdit = mode === 'edit' ? rawData[selectedRowIndex] : [];
-
-    headers.forEach((h, i) => {
-        // Jangan munculkan kolom Config atau Kolom Kosong
-        if (!h || h.toLowerCase().includes('config')) return;
-
-        const group = document.createElement('div');
-        group.className = 'form-group';
-        const label = document.createElement('label');
-        label.innerText = h;
-        
-        let input = document.createElement('input');
-        input.name = `col_${i}`;
-        input.id = `input_col_${i}`;
-        input.value = mode === 'edit' ? (rowDataEdit[i] || '') : '';
-
-        // Deteksi Dropdown & Autofill Logic
-        if (h.toLowerCase() === 'nama supplier') {
-            input.setAttribute('list', 'listSupplier');
-            input.oninput = () => autofillSupplier(input.value);
-        } else if (h.toLowerCase() === 'local name' || h.toLowerCase() === 'scientific name') {
-            input.setAttribute('list', 'listFish');
-            input.oninput = () => autofillFish(input.value, h.toLowerCase());
-        }
-
-        // Lock Kolom ID atau Hasil Autofill tertentu agar tidak diketik manual
-        const lockedFields = ['id supplier', 'code it', 'scientific name', 'category', 'group', 'origin'];
-        if (lockedFields.includes(h.toLowerCase()) && currentSheet === "Harga Supplier") {
-            input.classList.add('locked');
-            input.readOnly = true;
-        }
-
-        group.appendChild(label);
-        group.appendChild(input);
-        form.appendChild(group);
-    });
-
-    document.getElementById('dataModal').style.display = 'block';
-}
-
-// Logika Autofill Supplier
-function autofillSupplier(nama) {
-    const match = fullDataSupplier.find(r => r[1] === nama); // Kolom 1 biasanya Nama Supplier di sheet Data Supplier
-    if (match) {
-        headers.forEach((h, i) => {
-            if (h.toLowerCase() === 'id supplier') {
-                const el = document.getElementById(`input_col_${i}`);
-                if (el) el.value = match[0]; // Kolom 0 biasanya ID
-            }
-        });
-    }
-}
-
-// Logika Autofill Ikan
-function autofillFish(nama, headerType) {
-    const colIdx = headerType === 'local name' ? 19 : 20; // Sesuaikan index kolom di Master Data Ikan
-    const match = fullMasterIkan.find(r => r[colIdx] === nama);
-    if (match) {
-        headers.forEach((h, i) => {
-            const el = document.getElementById(`input_col_${i}`);
-            if (!el) return;
-            if (h.toLowerCase() === 'code it') el.value = match[0];
-            if (h.toLowerCase() === 'scientific name') el.value = match[20];
-            if (h.toLowerCase() === 'local name') el.value = match[19];
-            if (h.toLowerCase() === 'category') el.value = match[1];
-            if (h.toLowerCase() === 'group') el.value = match[2];
-        });
-    }
-}
-
-async function handleSave() {
-    const form = document.getElementById('dynamicForm');
-    const formData = new FormData(form);
-    const dataArray = headers.map((_, i) => {
-        const val = formData.get(`col_${i}`);
-        return val ? val.trim() : (rawData[selectedRowIndex] ? rawData[selectedRowIndex][i] : "");
-    });
-
-    showLoader('Menyimpan...');
-    try {
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'save',
-                sheet: currentSheet,
-                rowIndex: selectedRowIndex,
-                data: dataArray
-            })
-        });
-        const res = await response.json();
-        if (res.status === 'success') {
-            closeModal();
-            await loadData(currentSheet);
-        }
-    } catch (e) { 
-        setTimeout(async () => { closeModal(); await loadData(currentSheet); hideLoader(); }, 1500);
-    }
-}
-
-async function handleDelete() {
-    if (selectedRowIndex === null) return alert("Pilih baris!");
-    if (!confirm("Hapus data?")) return;
-    showLoader('Menghapus...');
-    try {
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'delete', sheet: currentSheet, rowIndex: selectedRowIndex })
-        });
-        setTimeout(async () => { selectedRowIndex = null; await loadData(currentSheet); hideLoader(); }, 1500);
-    } catch (e) { hideLoader(); }
-}
-
-function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
 
 function computeWidths() { colWidths = headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200)); }
 
 function rebuildFilteredIndices() {
     const q = searchQuery.toLowerCase();
     filteredIndices = [];
-    for (let r = 1; r < rawData.length; r++) { 
-        if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r); 
-    }
+    for (let r = 1; r < rawData.length; r++) { if (!q || rawData[r].some(c => String(c).toLowerCase().includes(q))) filteredIndices.push(r); }
     updateRowCounter();
 }
 
-function updateRowCounter() { document.getElementById('rowCounter').textContent = `${filteredIndices.length} baris`; }
+function updateRowCounter() { const shown = filteredIndices.length; document.getElementById('rowCounter').textContent = `${shown} baris ditemukan`; }
 
 function buildTable() {
     const container = document.getElementById('tableContainer');
     container.innerHTML = '';
+
     if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") {
         const layout = document.createElement('div');
         layout.className = 'database-layout';
+
         const sideList = document.createElement('div');
-        sideList.className = 'side-list'; sideList.id = 'sideGroupList'; sideList.style.width = sidebarWidth + 'px';
+        sideList.className = 'side-list';
+        sideList.id = 'sideGroupList';
+        sideList.style.width = sidebarWidth + 'px';
+
         const sResizer = document.createElement('div');
         sResizer.className = 'sidebar-resizer';
+        sResizer.addEventListener('mousedown', initSidebarResize);
+
         const sideDetail = document.createElement('div');
-        sideDetail.className = 'side-detail'; sideDetail.id = 'sideDataDetail'; sideDetail.onscroll = handleDashboardScroll;
-        layout.appendChild(sideList); layout.appendChild(sResizer); layout.appendChild(sideDetail);
+        sideDetail.className = 'side-detail';
+        sideDetail.id = 'sideDataDetail';
+        sideDetail.onscroll = handleDashboardScroll; // Scroll for Dashboard
+
+        layout.appendChild(sideList);
+        layout.appendChild(sResizer);
+        layout.appendChild(sideDetail);
         container.appendChild(layout);
+
         renderSidebarGroups();
-        renderDetailByGroup(currentGroup || 'ALL');
+        renderDetailByGroup('ALL');
     } else {
         const wrapper = document.createElement('div');
-        wrapper.className = 'table-wrapper'; wrapper.id = 'scrollWrapper'; wrapper.onscroll = handleTableScroll;
+        wrapper.className = 'table-wrapper';
+        wrapper.id = 'scrollWrapper';
+        wrapper.onscroll = handleTableScroll;
+
         const tbl = document.createElement('table');
         colgroup = document.createElement('colgroup');
         const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
         headers.forEach((_, i) => {
-            const col = document.createElement('col'); col.style.width = colWidths[i] + 'px';
+            const col = document.createElement('col'); col.id = `col-${i}`; col.style.width = colWidths[i] + 'px';
             if (!visibleColumns.includes(i)) col.style.display = 'none';
             colgroup.appendChild(col);
         });
         tbl.appendChild(colgroup);
+
         const thead = document.createElement('thead');
         const hrow = document.createElement('tr');
         const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
         headers.forEach((h, i) => {
-            const th = document.createElement('th'); th.textContent = h;
+            const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
             if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
             const resizer = document.createElement('div'); resizer.className = 'resizer';
+            resizer.addEventListener('mousedown', e => initResize(e, i));
             th.appendChild(resizer); hrow.appendChild(th);
         });
         thead.appendChild(hrow); tbl.appendChild(thead);
+        
         tableBody = document.createElement('tbody'); tableBody.id = 'tableBody'; tbl.appendChild(tableBody);
-        wrapper.appendChild(tbl); container.appendChild(wrapper);
+        wrapper.appendChild(tbl);
+        container.appendChild(wrapper);
         appendRows(0, itemsToShow);
     }
 }
 
+function initSidebarResize(e) {
+    e.preventDefault();
+    const startX = e.pageX;
+    const startWidth = sidebarWidth;
+    const sideList = document.getElementById('sideGroupList');
+    const doResize = m => {
+        sidebarWidth = Math.max(50, startWidth + (m.pageX - startX));
+        sideList.style.width = sidebarWidth + 'px';
+    };
+    const stop = () => { document.removeEventListener('mousemove', doResize); document.removeEventListener('mouseup', stop); };
+    document.addEventListener('mousemove', doResize); document.addEventListener('mouseup', stop);
+}
+
 function renderSidebarGroups() {
     const sideList = document.getElementById('sideGroupList');
-    if (!sideList) return;
-    const colIdx = 1; 
+    const colIdx = currentSheet === "Harga Supplier" ? 1 : 1; // Sama-sama Kolom B (Index 1)
     const groups = [...new Set(filteredIndices.map(idx => rawData[idx][colIdx]))].sort();
+
     sideList.innerHTML = '';
+
     const allDiv = document.createElement('div');
-    allDiv.className = 'supplier-card all-card ' + (currentGroup === 'ALL' ? 'active' : '');
-    allDiv.innerHTML = `<i class="fas fa-list"></i> &nbsp; ALL DATA`;
-    allDiv.onclick = () => { document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active')); allDiv.classList.add('active'); renderDetailByGroup('ALL'); };
+    allDiv.className = 'supplier-card all-card active';
+    allDiv.innerHTML = `<i class="fas fa-list"></i> &nbsp; ALL ${currentSheet === "Master Data Ikan" ? 'APP CODES' : 'SUPPLIERS'}`;
+    allDiv.onclick = () => {
+        document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
+        allDiv.classList.add('active');
+        renderDetailByGroup('ALL');
+    };
     sideList.appendChild(allDiv);
+
     groups.forEach(val => {
         const div = document.createElement('div');
-        div.className = 'supplier-card ' + (currentGroup === val ? 'active' : '');
+        div.className = 'supplier-card';
         div.innerText = val || "(Kosong)";
-        div.onclick = () => { document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active')); div.classList.add('active'); renderDetailByGroup(val); };
+        div.onclick = () => {
+            document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
+            div.classList.add('active');
+            renderDetailByGroup(val);
+        };
         sideList.appendChild(div);
     });
 }
 
+let currentGroup = 'ALL';
 function renderDetailByGroup(groupVal) {
     currentGroup = groupVal;
+    itemsToShow = 30; // Reset lazy load
     const sideDetail = document.getElementById('sideDataDetail');
-    if (!sideDetail) return;
     sideDetail.innerHTML = '';
-    dashboardRows = (groupVal === 'ALL') ? filteredIndices : filteredIndices.filter(idx => rawData[idx][1] === groupVal);
+    
+    const colIdx = 1;
+    dashboardRows = (groupVal === 'ALL') 
+                    ? filteredIndices 
+                    : filteredIndices.filter(idx => rawData[idx][colIdx] === groupVal);
+
     const tbl = document.createElement('table');
     const cg = document.createElement('colgroup');
-    const sc = document.createElement('col'); sc.style.width = '40px'; cg.appendChild(sc);
+    const selCol = document.createElement('col'); selCol.style.width = '40px'; cg.appendChild(selCol);
     headers.forEach((_, i) => {
-        const col = document.createElement('col'); col.style.width = colWidths[i] + 'px';
+        const col = document.createElement('col');
+        col.id = `detail-col-${i}`;
+        col.style.width = colWidths[i] + 'px';
         if (!visibleColumns.includes(i)) col.style.display = 'none';
         cg.appendChild(col);
     });
     tbl.appendChild(cg);
+
     const thead = document.createElement('thead');
-    const hr = document.createElement('tr');
-    const ths = document.createElement('th'); ths.textContent = 'SEL'; hr.appendChild(ths);
+    const hrow = document.createElement('tr');
+    const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
     headers.forEach((h, i) => {
-        const th = document.createElement('th'); th.textContent = h;
+        const th = document.createElement('th'); 
+        th.textContent = h;
         if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
-        hr.appendChild(th);
+        const resizer = document.createElement('div'); 
+        resizer.className = 'resizer';
+        resizer.addEventListener('mousedown', e => initResize(e, i, true));
+        th.appendChild(resizer);
+        hrow.appendChild(th);
     });
-    thead.appendChild(hr); tbl.appendChild(thead);
-    const tbody = document.createElement('tbody'); tbody.id = 'dashboardTableBody'; tbl.appendChild(tbody);
+    thead.appendChild(hrow);
+    tbl.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    tbody.id = 'dashboardTableBody';
+    tbl.appendChild(tbody);
     sideDetail.appendChild(tbl);
+
     appendDashboardRows(0, itemsToShow);
 }
 
-function appendDashboardRows(f, t) {
-    const tb = document.getElementById('dashboardTableBody');
-    if(!tb) return;
-    const limit = Math.min(dashboardRows.length, t);
-    for (let i = f; i < limit; i++) tb.appendChild(createRow(dashboardRows[i]));
+function appendDashboardRows(fromIdx, toIdx) {
+    const tbody = document.getElementById('dashboardTableBody');
+    if (!tbody) return;
+    const limit = Math.min(dashboardRows.length, toIdx);
+    for (let i = fromIdx; i < limit; i++) {
+        tbody.appendChild(createRow(dashboardRows[i]));
+    }
 }
 
 function handleDashboardScroll() {
     const wrap = document.getElementById('sideDataDetail');
     if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
         if (itemsToShow < dashboardRows.length) {
-            const s = itemsToShow; itemsToShow += 30; appendDashboardRows(s, itemsToShow);
+            const start = itemsToShow;
+            itemsToShow += 30;
+            appendDashboardRows(start, itemsToShow);
         }
     }
 }
 
 function handleTableScroll() {
     const wrap = document.getElementById('scrollWrapper');
-    if (wrap && wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
+    if (!wrap) return;
+    if (wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 30) {
         if (itemsToShow < filteredIndices.length) {
-            const s = itemsToShow; itemsToShow += 30; appendRows(s, itemsToShow);
+            const start = itemsToShow;
+            itemsToShow += 30;
+            appendRows(start, itemsToShow);
+            updateRowCounter();
         }
     }
 }
 
-function appendRows(f, t) {
-    const limit = Math.min(filteredIndices.length, t);
-    for (let i = f; i < limit; i++) tableBody.appendChild(createRow(filteredIndices[i]));
+function appendRows(fromIdx, toIdx) {
+    const limit = Math.min(filteredIndices.length, toIdx);
+    for (let fi = fromIdx; fi < limit; fi++) {
+        tableBody.appendChild(createRow(filteredIndices[fi]));
+    }
 }
 
 function createRow(r) {
     const tr = document.createElement('tr'); tr.id = `tr-${r}`; tr.onclick = () => selectRow(r);
     if (selectedRowIndex === r) tr.classList.add('selected-row');
-    const tdSel = document.createElement('td'); tdSel.style.textAlign='center';
+    const tdSel = document.createElement('td'); tdSel.className = 'text-center';
     const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === r);
     tdSel.appendChild(radio); tr.appendChild(tdSel);
-    if(rawData[r]) {
-        rawData[r].forEach((cell, idx) => {
-            const td = document.createElement('td');
-            if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
-            const val = cell != null ? String(cell) : '';
-            const imgUrl = toDisplayableImgUrl(val);
-            if (imgUrl) {
-                const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
-                td.appendChild(img);
-            } else td.textContent = val;
-            tr.appendChild(td);
-        });
-    }
+    rawData[r].forEach((cell, idx) => {
+        const td = document.createElement('td');
+        if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
+        const val = cell != null ? String(cell) : '';
+        const imgUrl = toDisplayableImgUrl(val);
+        if (imgUrl) {
+            const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
+            td.appendChild(img);
+        } else td.textContent = val;
+        tr.appendChild(td);
+    });
     return tr;
 }
 
@@ -497,7 +468,8 @@ function toDisplayableImgUrl(url) {
     if (!url || typeof url !== 'string' || !url.startsWith('http')) return null;
     const ucMatch = url.match(/[?&]id=([\w-]+)/);
     if (url.includes('drive.google.com') && ucMatch) return `https://drive.google.com/thumbnail?id=${ucMatch[1]}&sz=s80`;
-    return (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) ? url : null;
+    if (/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
+    return null;
 }
 
 function selectRow(index) {
@@ -507,54 +479,167 @@ function selectRow(index) {
     }
     selectedRowIndex = index;
     const tr = document.getElementById(`tr-${index}`);
-    if (tr) { tr.classList.add('selected-row'); const rad = tr.querySelector('input[type="radio"]'); if(rad) rad.checked = true; }
+    if (tr) { 
+        tr.classList.add('selected-row'); 
+        const rad = tr.querySelector('input[type="radio"]');
+        if(rad) rad.checked = true; 
+    }
 }
 
-async function fetchDependencies() {
-    try {
-        const [resSup, resIkan] = await Promise.all([
-            fetch(`${SCRIPT_URL}?action=read&sheet=Data Supplier`),
-            fetch(`${SCRIPT_URL}?action=read&sheet=Master Data Ikan`)
-        ]);
-        const sData = await resSup.json(), iData = await resIkan.json();
-        if(sData.status === 'success') {
-            fullDataSupplier = sData.data.slice(1);
-            document.getElementById('listSupplier').innerHTML = fullDataSupplier.map(row => `<option value="${row[1]}">`).join('');
-        }
-        if(iData.status === 'success') {
-            fullMasterIkan = iData.data.slice(1);
-            document.getElementById('listFish').innerHTML = fullMasterIkan.map(row => `<option value="${row[19]}">`).join(''); 
-        }
-    } catch(e) {}
+function initResize(e, i, isDashboard = false) {
+    e.stopPropagation();
+    const startX = e.pageX, startWidth = colWidths[i];
+    const colId = isDashboard ? `detail-col-${i}` : `col-${i}`;
+    const targetCol = document.getElementById(colId);
+    const doResize = m => { 
+        const nW = Math.max(20, startWidth + (m.pageX - startX)); 
+        colWidths[i] = nW; 
+        if(targetCol) targetCol.style.width = nW + 'px'; 
+    };
+    const stop = () => { document.removeEventListener('mousemove', doResize); document.removeEventListener('mouseup', stop); };
+    document.addEventListener('mousemove', doResize); document.addEventListener('mouseup', stop);
 }
 
-async function saveColumnConfig() {
-    const configString = visibleColumns.join(',');
-    try { await fetch(`${SCRIPT_URL}?action=updateConfig&sheet=${encodeURIComponent(currentSheet)}&config=${configString}`);
-    } catch (e) { console.error("Gagal simpan config"); }
-}
-
-function toggleFilterPanel(e) { e.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
+function toggleFilterPanel(event) { event.stopPropagation(); const p = document.getElementById('columnFilterPanel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; }
 
 function createFilterCheckboxes() {
     const container = document.getElementById('filterCheckboxes'); container.innerHTML = '';
     headers.forEach((h, i) => {
         const lbl = document.createElement('label'); lbl.className = 'filter-item';
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = visibleColumns.includes(i);
-        cb.onchange = async () => {
-            if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } 
-            else { visibleColumns = visibleColumns.filter(x=>x!==i); }
-            if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") { renderDetailByGroup(currentGroup); } 
-            else { buildTable(); }
-            await saveColumnConfig();
+        cb.onchange = () => {
+            if(cb.checked) { if(!visibleColumns.includes(i)) visibleColumns.push(i); } else { visibleColumns = visibleColumns.filter(x=>x!==i); }
+            buildTable();
         };
         lbl.appendChild(cb); lbl.append(' ' + h); container.appendChild(lbl);
     });
 }
 
-function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); saveColumnConfig(); }
+function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); }
 
-document.getElementById('searchInput').oninput = function() { searchQuery = this.value; rebuildFilteredIndices(); buildTable(); };
+function handleAutofillLogic(i, val) {
+    if (currentSheet === "Harga Supplier") {
+        if (i === 1) { 
+            const match = dbSupplier.find(row => row[1] === val);
+            if (match) { document.getElementById('field-text-0').value = match[0]; document.getElementById('field-0').value = match[0]; }
+            else if (!val) { document.getElementById('field-text-0').value = ""; document.getElementById('field-0').value = ""; }
+        }
+        if (i === 3) {
+            const match = dbMasterIkan.find(row => row[19] === val); 
+            if (match) {
+                document.getElementById('field-text-2').value = match[3]; document.getElementById('field-2').value = match[3];
+                document.getElementById('field-text-4').value = match[9]; document.getElementById('field-4').value = match[9];
+                document.getElementById('field-text-5').value = match[10]; document.getElementById('field-5').value = match[10];
+            } else if (!val) {
+                [2, 4, 5].forEach(idx => { document.getElementById('field-text-' + idx).value = ""; document.getElementById('field-' + idx).value = ""; });
+            }
+        }
+    }
+}
+
+function showDatalist(elm) {
+    setTimeout(() => {
+        elm.dispatchEvent(new Event('input', { bubbles: true }));
+        if (elm.list) { elm.focus(); }
+    }, 10);
+}
+
+function openModal(mode) {
+    if (mode === 'edit' && selectedRowIndex === null) { alert("Pilih data!"); return; }
+    currentMode = mode;
+    const form = document.getElementById('dynamicForm'); form.innerHTML = '';
+    document.getElementById('modalTitle').innerText = `${mode === 'add' ? 'TAMBAH' : 'EDIT'} : ${currentSheet}`;
+    
+    let autoSupplierID = "";
+    if (mode === 'add' && currentSheet === "Data Supplier") {
+        const year = new Date().getFullYear();
+        autoSupplierID = year + String(rawData.length).padStart(2, '0');
+    }
+
+    headers.forEach((h, i) => {
+        let val = mode === 'edit' ? String(rawData[selectedRowIndex][i] ?? '') : '';
+        if (mode === 'add' && currentSheet === "Data Supplier" && i === 0) val = autoSupplierID;
+
+        const group = document.createElement('div'); group.className = 'form-group';
+        const isImg = h.toUpperCase().includes("FOTO") || h.toUpperCase().includes("IMAGE") || h.toUpperCase().includes("GAMBAR");
+        
+        let isLocked = false, useDatalist = "";
+        
+        if (currentSheet === "Harga Supplier") {
+            if ([0, 2, 4, 5].includes(i)) isLocked = true; 
+            if (i === 1) useDatalist = "listSupplier"; 
+            if (i === 3) useDatalist = "listFish"; 
+        } else if (currentSheet === "Data Supplier") {
+            if (i === 0) isLocked = true; 
+        }
+
+        if (isImg) {
+            group.innerHTML = `<label>${h}</label>
+                <input type="hidden" id="field-${i}" value="${val}">
+                <input type="file" accept="image/*" onchange="uploadFile(this, ${i})">
+                <img id="prev-${i}" src="${toDisplayableImgUrl(val) || ''}" class="img-preview" style="display:${val?'block':'none'}">`;
+        } else {
+            group.innerHTML = `<label>${h} ${isLocked ? '🔒' : ''}</label>
+                <input type="hidden" id="field-${i}" value="${val}">
+                <input type="text" id="field-text-${i}" value="${val}" list="${useDatalist}"
+                       ${isLocked ? 'readonly class="locked"' : ''}
+                       autocomplete="off"
+                       onfocus="${useDatalist ? "this.value=''; handleAutofillLogic("+i+", ''); showDatalist(this)" : ""}"
+                       oninput="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)"
+                       onchange="document.getElementById('field-${i}').value=this.value; handleAutofillLogic(${i}, this.value)">`;
+        }
+        form.appendChild(group);
+    });
+    document.getElementById('dataModal').style.display = 'block';
+}
+
+function uploadFile(input, idx) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result.split(',')[1];
+        showLoader('⚡ UPLOADING IMAGE...');
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'upload', filename: file.name, mimeType: file.type, data: base64 }) })
+        .then(res => res.json()).then(res => {
+            if (res.status === 'success') {
+                document.getElementById('field-' + idx).value = res.url;
+                const prev = document.getElementById('prev-' + idx); prev.src = res.url; prev.style.display = 'block';
+            }
+        }).finally(() => hideLoader());
+    };
+    reader.readAsDataURL(file);
+}
+
+function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
+
+async function handleSave() {
+    const dataSave = headers.map((_, i) => {
+        const el = document.getElementById(`field-${i}`);
+        return el ? el.value : "";
+    });
+    showLoader('⚡ MENGIRIM DATA KE SPREADSHEET...');
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'save', sheet: currentSheet, rowIndex: currentMode === 'edit' ? selectedRowIndex : null, data: dataSave }) });
+        const result = await res.json();
+        if (result.status === 'success') { alert('Data Berhasil Tersimpan!'); await loadData(currentSheet); closeModal(); }
+        else { alert('Error: ' + result.message); }
+    } catch(e) { alert('Gagal koneksi.'); } finally { hideLoader(); }
+}
+
+async function handleDelete() {
+    if (selectedRowIndex === null || !confirm("Hapus data?")) return;
+    showLoader();
+    try {
+        const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', sheet: currentSheet, rowIndex: selectedRowIndex }) });
+        if ((await res.json()).status === 'success') { await loadData(currentSheet); selectedRowIndex = null; }
+    } catch(e) { alert('Gagal hapus.'); } finally { hideLoader(); }
+}
+
+document.getElementById('searchInput').oninput = function() {
+    searchQuery = this.value; 
+    rebuildFilteredIndices(); 
+    buildTable(); 
+};
 
 window.onclick = e => {
     const p = document.getElementById('columnFilterPanel');
