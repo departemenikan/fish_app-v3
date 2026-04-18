@@ -163,6 +163,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfCYQJGcR7IUY6QvnnC
 let rawData = [], headers = [], visibleColumns = [], colWidths = [];
 let filteredIndices = [], itemsToShow = 30, currentSheet = "", selectedRowIndex = null, searchQuery = "";
 let tableBody = null, colgroup = null, sidebarWidth = 220, dashboardRows = [], currentGroup = 'ALL';
+let fullDataSupplier = [], fullMasterIkan = []; // Simpan data utuh untuk autofill
 
 function showLoader(msg) { const l = document.getElementById('loader'); l.innerText = msg || '⚡ LOADING...'; l.style.display = 'block'; }
 function hideLoader() { document.getElementById('loader').style.display = 'none'; }
@@ -176,7 +177,7 @@ async function openSheet(sheetName) {
     document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('homePageContent').style.display = 'none';
     document.getElementById('databaseSection').style.display = 'block';
-    if(sheetName === "Harga Supplier" || sheetName === "Master Data Ikan") await fetchDependencies();
+    await fetchDependencies();
     await loadData(sheetName);
 }
 
@@ -193,7 +194,6 @@ async function loadData(sheet) {
         if (result.status === 'success') {
             rawData = result.data;
             headers = rawData[0];
-            
             let lastRowData = rawData[1] || [];
             let potentialConfig = String(lastRowData[lastRowData.length - 1]).trim();
             if (potentialConfig && potentialConfig.includes(',')) {
@@ -201,7 +201,6 @@ async function loadData(sheet) {
             } else {
                 visibleColumns = headers.map((_, i) => i);
             }
-            
             computeWidths();
             createFilterCheckboxes();
             rebuildFilteredIndices();
@@ -211,6 +210,7 @@ async function loadData(sheet) {
     hideLoader();
 }
 
+// --- FUNGSI MODAL DENGAN LOGIKA AUTOFILL ---
 function openModal(mode) {
     const form = document.getElementById('dynamicForm');
     form.innerHTML = '';
@@ -224,26 +224,31 @@ function openModal(mode) {
     const rowDataEdit = mode === 'edit' ? rawData[selectedRowIndex] : [];
 
     headers.forEach((h, i) => {
+        // Jangan munculkan kolom Config atau Kolom Kosong
+        if (!h || h.toLowerCase().includes('config')) return;
+
         const group = document.createElement('div');
         group.className = 'form-group';
         const label = document.createElement('label');
         label.innerText = h;
         
-        let input;
-        if (h.toLowerCase().includes('supplier')) {
-            input = document.createElement('input');
+        let input = document.createElement('input');
+        input.name = `col_${i}`;
+        input.id = `input_col_${i}`;
+        input.value = mode === 'edit' ? (rowDataEdit[i] || '') : '';
+
+        // Deteksi Dropdown & Autofill Logic
+        if (h.toLowerCase() === 'nama supplier') {
             input.setAttribute('list', 'listSupplier');
-        } else if (h.toLowerCase().includes('ikan') || h.toLowerCase().includes('name')) {
-            input = document.createElement('input');
+            input.oninput = () => autofillSupplier(input.value);
+        } else if (h.toLowerCase() === 'local name' || h.toLowerCase() === 'scientific name') {
             input.setAttribute('list', 'listFish');
-        } else {
-            input = document.createElement('input');
+            input.oninput = () => autofillFish(input.value, h.toLowerCase());
         }
 
-        input.name = `col_${i}`;
-        input.value = mode === 'edit' ? (rowDataEdit[i] || '') : '';
-        
-        if (mode === 'edit' && i === 0 && currentSheet === "Data Supplier") {
+        // Lock Kolom ID atau Hasil Autofill tertentu agar tidak diketik manual
+        const lockedFields = ['id supplier', 'code it', 'scientific name', 'category', 'group', 'origin'];
+        if (lockedFields.includes(h.toLowerCase()) && currentSheet === "Harga Supplier") {
             input.classList.add('locked');
             input.readOnly = true;
         }
@@ -256,73 +261,76 @@ function openModal(mode) {
     document.getElementById('dataModal').style.display = 'block';
 }
 
+// Logika Autofill Supplier
+function autofillSupplier(nama) {
+    const match = fullDataSupplier.find(r => r[1] === nama); // Kolom 1 biasanya Nama Supplier di sheet Data Supplier
+    if (match) {
+        headers.forEach((h, i) => {
+            if (h.toLowerCase() === 'id supplier') {
+                const el = document.getElementById(`input_col_${i}`);
+                if (el) el.value = match[0]; // Kolom 0 biasanya ID
+            }
+        });
+    }
+}
+
+// Logika Autofill Ikan
+function autofillFish(nama, headerType) {
+    const colIdx = headerType === 'local name' ? 19 : 20; // Sesuaikan index kolom di Master Data Ikan
+    const match = fullMasterIkan.find(r => r[colIdx] === nama);
+    if (match) {
+        headers.forEach((h, i) => {
+            const el = document.getElementById(`input_col_${i}`);
+            if (!el) return;
+            if (h.toLowerCase() === 'code it') el.value = match[0];
+            if (h.toLowerCase() === 'scientific name') el.value = match[20];
+            if (h.toLowerCase() === 'local name') el.value = match[19];
+            if (h.toLowerCase() === 'category') el.value = match[1];
+            if (h.toLowerCase() === 'group') el.value = match[2];
+        });
+    }
+}
+
 async function handleSave() {
     const form = document.getElementById('dynamicForm');
     const formData = new FormData(form);
-    
-    // Perbaikan: Mapping data dengan pembersihan whitespace
     const dataArray = headers.map((_, i) => {
         const val = formData.get(`col_${i}`);
-        return val ? val.trim() : "";
+        return val ? val.trim() : (rawData[selectedRowIndex] ? rawData[selectedRowIndex][i] : "");
     });
 
     showLoader('Menyimpan...');
     try {
         const response = await fetch(SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Jika menggunakan Web App langsung kadang butuh ini, tapi lebih baik biarkan default jika lewat proxy
             body: JSON.stringify({
                 action: 'save',
                 sheet: currentSheet,
-                rowIndex: selectedRowIndex, // Pastikan ini null untuk Tambah Baru
+                rowIndex: selectedRowIndex,
                 data: dataArray
             })
         });
-        
-        // Karena no-cors tidak bisa baca response, kita asumsikan sukses lalu refresh
-        // Namun jika SCRIPT_URL sudah benar pengaturannya, gunakan cara standar:
-        /*
         const res = await response.json();
-        if (res.status === 'success') { ... }
-        */
-        
-        // Cara Aman Refresh Data:
-        setTimeout(async () => {
+        if (res.status === 'success') {
             closeModal();
-            selectedRowIndex = null;
             await loadData(currentSheet);
-            hideLoader();
-        }, 1500);
-
+        }
     } catch (e) { 
-        alert("Proses simpan dikirim. Mohon tunggu refresh otomatis."); 
-        hideLoader();
+        setTimeout(async () => { closeModal(); await loadData(currentSheet); hideLoader(); }, 1500);
     }
 }
 
 async function handleDelete() {
-    if (selectedRowIndex === null) return alert("Pilih baris yang akan dihapus!");
-    if (!confirm("Hapus data ini?")) return;
-
+    if (selectedRowIndex === null) return alert("Pilih baris!");
+    if (!confirm("Hapus data?")) return;
     showLoader('Menghapus...');
     try {
         await fetch(SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify({
-                action: 'delete',
-                sheet: currentSheet,
-                rowIndex: selectedRowIndex
-            })
+            body: JSON.stringify({ action: 'delete', sheet: currentSheet, rowIndex: selectedRowIndex })
         });
-        
-        setTimeout(async () => {
-            selectedRowIndex = null;
-            await loadData(currentSheet);
-            hideLoader();
-        }, 1500);
-    } catch (e) { 
-        hideLoader();
-    }
+        setTimeout(async () => { selectedRowIndex = null; await loadData(currentSheet); hideLoader(); }, 1500);
+    } catch (e) { hideLoader(); }
 }
 
 function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
@@ -343,7 +351,6 @@ function updateRowCounter() { document.getElementById('rowCounter').textContent 
 function buildTable() {
     const container = document.getElementById('tableContainer');
     container.innerHTML = '';
-
     if (currentSheet === "Harga Supplier" || currentSheet === "Master Data Ikan") {
         const layout = document.createElement('div');
         layout.className = 'database-layout';
@@ -364,7 +371,7 @@ function buildTable() {
         colgroup = document.createElement('colgroup');
         const selCol = document.createElement('col'); selCol.style.width = '40px'; colgroup.appendChild(selCol);
         headers.forEach((_, i) => {
-            const col = document.createElement('col'); col.id = `col-${i}`; col.style.width = colWidths[i] + 'px';
+            const col = document.createElement('col'); col.style.width = colWidths[i] + 'px';
             if (!visibleColumns.includes(i)) col.style.display = 'none';
             colgroup.appendChild(col);
         });
@@ -373,7 +380,7 @@ function buildTable() {
         const hrow = document.createElement('tr');
         const thSel = document.createElement('th'); thSel.style.width = '40px'; thSel.textContent = 'SEL'; hrow.appendChild(thSel);
         headers.forEach((h, i) => {
-            const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
+            const th = document.createElement('th'); th.textContent = h;
             if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
             const resizer = document.createElement('div'); resizer.className = 'resizer';
             th.appendChild(resizer); hrow.appendChild(th);
@@ -387,25 +394,20 @@ function buildTable() {
 
 function renderSidebarGroups() {
     const sideList = document.getElementById('sideGroupList');
+    if (!sideList) return;
     const colIdx = 1; 
     const groups = [...new Set(filteredIndices.map(idx => rawData[idx][colIdx]))].sort();
     sideList.innerHTML = '';
     const allDiv = document.createElement('div');
     allDiv.className = 'supplier-card all-card ' + (currentGroup === 'ALL' ? 'active' : '');
     allDiv.innerHTML = `<i class="fas fa-list"></i> &nbsp; ALL DATA`;
-    allDiv.onclick = () => {
-        document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
-        allDiv.classList.add('active'); renderDetailByGroup('ALL');
-    };
+    allDiv.onclick = () => { document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active')); allDiv.classList.add('active'); renderDetailByGroup('ALL'); };
     sideList.appendChild(allDiv);
     groups.forEach(val => {
         const div = document.createElement('div');
         div.className = 'supplier-card ' + (currentGroup === val ? 'active' : '');
         div.innerText = val || "(Kosong)";
-        div.onclick = () => {
-            document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active'));
-            div.classList.add('active'); renderDetailByGroup(val);
-        };
+        div.onclick = () => { document.querySelectorAll('.supplier-card').forEach(el => el.classList.remove('active')); div.classList.add('active'); renderDetailByGroup(val); };
         sideList.appendChild(div);
     });
 }
@@ -470,13 +472,11 @@ function appendRows(f, t) {
 }
 
 function createRow(r) {
-    const tr = document.createElement('tr'); tr.id = `tr-${r}`; 
-    tr.onclick = (e) => { e.stopPropagation(); selectRow(r); };
+    const tr = document.createElement('tr'); tr.id = `tr-${r}`; tr.onclick = () => selectRow(r);
     if (selectedRowIndex === r) tr.classList.add('selected-row');
     const tdSel = document.createElement('td'); tdSel.style.textAlign='center';
     const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === r);
     tdSel.appendChild(radio); tr.appendChild(tdSel);
-    
     if(rawData[r]) {
         rawData[r].forEach((cell, idx) => {
             const td = document.createElement('td');
@@ -507,11 +507,7 @@ function selectRow(index) {
     }
     selectedRowIndex = index;
     const tr = document.getElementById(`tr-${index}`);
-    if (tr) { 
-        tr.classList.add('selected-row'); 
-        const rad = tr.querySelector('input[type="radio"]'); 
-        if(rad) rad.checked = true; 
-    }
+    if (tr) { tr.classList.add('selected-row'); const rad = tr.querySelector('input[type="radio"]'); if(rad) rad.checked = true; }
 }
 
 async function fetchDependencies() {
@@ -521,8 +517,14 @@ async function fetchDependencies() {
             fetch(`${SCRIPT_URL}?action=read&sheet=Master Data Ikan`)
         ]);
         const sData = await resSup.json(), iData = await resIkan.json();
-        if(sData.status === 'success') document.getElementById('listSupplier').innerHTML = sData.data.slice(1).map(row => `<option value="${row[1]}">`).join('');
-        if(iData.status === 'success') document.getElementById('listFish').innerHTML = iData.data.slice(1).map(row => `<option value="${row[19]}">`).join(''); 
+        if(sData.status === 'success') {
+            fullDataSupplier = sData.data.slice(1);
+            document.getElementById('listSupplier').innerHTML = fullDataSupplier.map(row => `<option value="${row[1]}">`).join('');
+        }
+        if(iData.status === 'success') {
+            fullMasterIkan = iData.data.slice(1);
+            document.getElementById('listFish').innerHTML = fullMasterIkan.map(row => `<option value="${row[19]}">`).join(''); 
+        }
     } catch(e) {}
 }
 
@@ -552,12 +554,7 @@ function createFilterCheckboxes() {
 
 function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); saveColumnConfig(); }
 
-document.getElementById('searchInput').oninput = function() { 
-    searchQuery = this.value; 
-    itemsToShow = 30; // Reset pagination
-    rebuildFilteredIndices(); 
-    buildTable(); 
-};
+document.getElementById('searchInput').oninput = function() { searchQuery = this.value; rebuildFilteredIndices(); buildTable(); };
 
 window.onclick = e => {
     const p = document.getElementById('columnFilterPanel');
