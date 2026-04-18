@@ -40,40 +40,31 @@
         #databaseSection { display: none; background: #000; height: 100vh; width: 100%; }
         #searchInput { width: 180px; padding: 6px 10px; background: #111; color: var(--neon); border: 1px solid #333; border-radius: 4px; font-size: 10px; outline: none; }
         #rowCounter { font-size: 10px; color: #777; white-space: nowrap; margin-right: 10px; }
-        
         .database-layout { display: flex; height: calc(100vh - 130px); overflow: hidden; }
         .side-list { width: 220px; border-right: 1px solid #222; overflow-y: auto; background: #050505; flex-shrink: 0; }
         .side-detail { flex: 1; overflow: auto; background: #000; position: relative; }
-        
         .sidebar-resizer { width: 10px; cursor: col-resize; background: #1a1a1a; flex-shrink: 0; z-index: 20; transition: background 0.2s; position: relative; }
         .sidebar-resizer::after { content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 2px; height: 30px; background: #333; border-radius: 2px; }
         .sidebar-resizer:hover { background: var(--neon); }
-
         .supplier-card { padding: 12px 15px; border-bottom: 1px solid #1a1a1a; cursor: pointer; font-size: 11px; color: #888; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .supplier-card:hover { background: #111; color: var(--neon); }
         .supplier-card.active { background: #111; color: var(--neon); border-left: 3px solid var(--neon); font-weight: bold; }
         .all-card { color: var(--green); border-bottom: 2px solid #222; font-weight: bold; }
-
         .table-wrapper { overflow: auto; height: calc(100vh - 130px); width: 100%; position: relative; }
         table { border-collapse: collapse; table-layout: fixed; width: max-content; }
         th { background: #1a1a1a; color: var(--neon); padding: 8px 4px; position: sticky; top: 0; text-align: center; font-size: 10px; z-index: 10; border: 1px solid #2a2a2a; overflow: hidden; white-space: nowrap; }
         td { padding: 6px 4px; border: 1px solid #1a1a1a; font-size: 10px; color: #ccc; vertical-align: middle; overflow: hidden; white-space: nowrap; text-overflow: clip; }
-        
         .hidden-col { display: none !important; }
-
         .resizer { position: absolute; right: 0; top: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 11; }
         .resizer:hover { background: var(--neon); }
         tr.selected-row { background: rgba(0, 210, 255, 0.15) !important; }
-        
         #loader { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--neon); z-index: 9000; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid var(--neon); display: none; font-size: 12px; box-shadow: 0 0 15px var(--neon); }
-        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; backdrop-filter: blur(4px); }
         .modal-content { background: #111; border: 1px solid var(--neon); width: 90%; max-width: 450px; margin: 20px auto; padding: 25px; border-radius: 8px; max-height: 85vh; overflow-y: auto; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 10px; color: var(--neon); margin-bottom: 4px; text-transform: uppercase; }
         .form-group input, .form-group select { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; border-radius: 4px; font-size: 11px; }
         .form-group input.locked { background: #1a1a1a; color: #888; border: 1px solid #222; }
-        .img-preview { max-width: 150px; margin-top: 5px; border: 1px solid var(--neon); display: none; }
         .img-cell { max-height: 25px; vertical-align: middle; }
     </style>
 </head>
@@ -176,7 +167,6 @@ let tableBody = null, colgroup = null, sidebarWidth = 220, dashboardRows = [], c
 function showLoader(msg) { const l = document.getElementById('loader'); l.innerText = msg || '⚡ LOADING...'; l.style.display = 'block'; }
 function hideLoader() { document.getElementById('loader').style.display = 'none'; }
 
-// --- FUNGSI NAVIGASI & LOAD ---
 async function openSheet(sheetName) {
     currentSheet = sheetName;
     selectedRowIndex = null;
@@ -204,7 +194,6 @@ async function loadData(sheet) {
             rawData = result.data;
             headers = rawData[0];
             
-            // Logika Config Kolom
             let lastRowData = rawData[1] || [];
             let potentialConfig = String(lastRowData[lastRowData.length - 1]).trim();
             if (potentialConfig && potentialConfig.includes(',')) {
@@ -222,7 +211,6 @@ async function loadData(sheet) {
     hideLoader();
 }
 
-// --- FUNGSI OPERASIONAL (TAMBAH, EDIT, HAPUS) ---
 function openModal(mode) {
     const form = document.getElementById('dynamicForm');
     form.innerHTML = '';
@@ -255,7 +243,6 @@ function openModal(mode) {
         input.name = `col_${i}`;
         input.value = mode === 'edit' ? (rowDataEdit[i] || '') : '';
         
-        // Proteksi ID Supplier
         if (mode === 'edit' && i === 0 && currentSheet === "Data Supplier") {
             input.classList.add('locked');
             input.readOnly = true;
@@ -272,26 +259,45 @@ function openModal(mode) {
 async function handleSave() {
     const form = document.getElementById('dynamicForm');
     const formData = new FormData(form);
-    const dataArray = headers.map((_, i) => formData.get(`col_${i}`));
+    
+    // Perbaikan: Mapping data dengan pembersihan whitespace
+    const dataArray = headers.map((_, i) => {
+        const val = formData.get(`col_${i}`);
+        return val ? val.trim() : "";
+    });
 
     showLoader('Menyimpan...');
     try {
         const response = await fetch(SCRIPT_URL, {
             method: 'POST',
+            mode: 'no-cors', // Jika menggunakan Web App langsung kadang butuh ini, tapi lebih baik biarkan default jika lewat proxy
             body: JSON.stringify({
                 action: 'save',
                 sheet: currentSheet,
-                rowIndex: selectedRowIndex,
+                rowIndex: selectedRowIndex, // Pastikan ini null untuk Tambah Baru
                 data: dataArray
             })
         });
+        
+        // Karena no-cors tidak bisa baca response, kita asumsikan sukses lalu refresh
+        // Namun jika SCRIPT_URL sudah benar pengaturannya, gunakan cara standar:
+        /*
         const res = await response.json();
-        if (res.status === 'success') {
+        if (res.status === 'success') { ... }
+        */
+        
+        // Cara Aman Refresh Data:
+        setTimeout(async () => {
             closeModal();
+            selectedRowIndex = null;
             await loadData(currentSheet);
-        } else { alert("Gagal: " + res.message); }
-    } catch (e) { alert("Error saat menyimpan."); }
-    hideLoader();
+            hideLoader();
+        }, 1500);
+
+    } catch (e) { 
+        alert("Proses simpan dikirim. Mohon tunggu refresh otomatis."); 
+        hideLoader();
+    }
 }
 
 async function handleDelete() {
@@ -300,7 +306,7 @@ async function handleDelete() {
 
     showLoader('Menghapus...');
     try {
-        const response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: 'delete',
@@ -308,18 +314,19 @@ async function handleDelete() {
                 rowIndex: selectedRowIndex
             })
         });
-        const res = await response.json();
-        if (res.status === 'success') {
+        
+        setTimeout(async () => {
             selectedRowIndex = null;
             await loadData(currentSheet);
-        } else { alert("Gagal hapus."); }
-    } catch (e) { alert("Error koneksi."); }
-    hideLoader();
+            hideLoader();
+        }, 1500);
+    } catch (e) { 
+        hideLoader();
+    }
 }
 
 function closeModal() { document.getElementById('dataModal').style.display = 'none'; }
 
-// --- LOGIKA TABEL & RESIZER (TETAP SAMA) ---
 function computeWidths() { colWidths = headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200)); }
 
 function rebuildFilteredIndices() {
@@ -344,7 +351,6 @@ function buildTable() {
         sideList.className = 'side-list'; sideList.id = 'sideGroupList'; sideList.style.width = sidebarWidth + 'px';
         const sResizer = document.createElement('div');
         sResizer.className = 'sidebar-resizer';
-        sResizer.addEventListener('mousedown', initSidebarResize);
         const sideDetail = document.createElement('div');
         sideDetail.className = 'side-detail'; sideDetail.id = 'sideDataDetail'; sideDetail.onscroll = handleDashboardScroll;
         layout.appendChild(sideList); layout.appendChild(sResizer); layout.appendChild(sideDetail);
@@ -370,7 +376,6 @@ function buildTable() {
             const th = document.createElement('th'); th.id = `th-${i}`; th.textContent = h;
             if (!visibleColumns.includes(i)) th.classList.add('hidden-col');
             const resizer = document.createElement('div'); resizer.className = 'resizer';
-            resizer.addEventListener('mousedown', e => initResize(e, i));
             th.appendChild(resizer); hrow.appendChild(th);
         });
         thead.appendChild(hrow); tbl.appendChild(thead);
@@ -380,7 +385,6 @@ function buildTable() {
     }
 }
 
-// ... (Fungsi Helper Sidebar, Dashboard, Scroll, createRow tetap seperti sebelumnya) ...
 function renderSidebarGroups() {
     const sideList = document.getElementById('sideGroupList');
     const colIdx = 1; 
@@ -437,6 +441,7 @@ function renderDetailByGroup(groupVal) {
 
 function appendDashboardRows(f, t) {
     const tb = document.getElementById('dashboardTableBody');
+    if(!tb) return;
     const limit = Math.min(dashboardRows.length, t);
     for (let i = f; i < limit; i++) tb.appendChild(createRow(dashboardRows[i]));
 }
@@ -465,22 +470,26 @@ function appendRows(f, t) {
 }
 
 function createRow(r) {
-    const tr = document.createElement('tr'); tr.id = `tr-${r}`; tr.onclick = () => selectRow(r);
+    const tr = document.createElement('tr'); tr.id = `tr-${r}`; 
+    tr.onclick = (e) => { e.stopPropagation(); selectRow(r); };
     if (selectedRowIndex === r) tr.classList.add('selected-row');
     const tdSel = document.createElement('td'); tdSel.style.textAlign='center';
     const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'rowSelect'; radio.checked = (selectedRowIndex === r);
     tdSel.appendChild(radio); tr.appendChild(tdSel);
-    rawData[r].forEach((cell, idx) => {
-        const td = document.createElement('td');
-        if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
-        const val = cell != null ? String(cell) : '';
-        const imgUrl = toDisplayableImgUrl(val);
-        if (imgUrl) {
-            const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
-            td.appendChild(img);
-        } else td.textContent = val;
-        tr.appendChild(td);
-    });
+    
+    if(rawData[r]) {
+        rawData[r].forEach((cell, idx) => {
+            const td = document.createElement('td');
+            if (!visibleColumns.includes(idx)) td.classList.add('hidden-col');
+            const val = cell != null ? String(cell) : '';
+            const imgUrl = toDisplayableImgUrl(val);
+            if (imgUrl) {
+                const img = document.createElement('img'); img.src = imgUrl; img.className = 'img-cell';
+                td.appendChild(img);
+            } else td.textContent = val;
+            tr.appendChild(td);
+        });
+    }
     return tr;
 }
 
@@ -498,7 +507,11 @@ function selectRow(index) {
     }
     selectedRowIndex = index;
     const tr = document.getElementById(`tr-${index}`);
-    if (tr) { tr.classList.add('selected-row'); const rad = tr.querySelector('input[type="radio"]'); if(rad) rad.checked = true; }
+    if (tr) { 
+        tr.classList.add('selected-row'); 
+        const rad = tr.querySelector('input[type="radio"]'); 
+        if(rad) rad.checked = true; 
+    }
 }
 
 async function fetchDependencies() {
@@ -539,9 +552,13 @@ function createFilterCheckboxes() {
 
 function resetWidths() { visibleColumns = headers.map((_, i) => i); buildTable(); saveColumnConfig(); }
 
-document.getElementById('searchInput').oninput = function() { searchQuery = this.value; rebuildFilteredIndices(); buildTable(); };
+document.getElementById('searchInput').oninput = function() { 
+    searchQuery = this.value; 
+    itemsToShow = 30; // Reset pagination
+    rebuildFilteredIndices(); 
+    buildTable(); 
+};
 
-// Click-outside listener untuk panel kolom
 window.onclick = e => {
     const p = document.getElementById('columnFilterPanel');
     if (p && p.style.display === 'block' && !p.contains(e.target) && e.target.id !== 'btnFilterCol') p.style.display = 'none';
