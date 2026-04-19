@@ -210,7 +210,7 @@
    1. KONFIGURASI
    Ganti SCRIPT_URL jika Apps Script di-deploy ulang.
 ══════════════════════════════════════════════════════════════ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyu3CL2Iup3F8QIVwt08nDKHC0KIa1m_REBDG7RpfhPfkJwpr-cYPjrpdmsMk-4j1qn7w/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiYCi4WxnYLcQyBXUXWmgZATLR74McHmjdY0bcInB_qQ7uYuFBNoCVb9KoZWSc2FbtkA/exec';
 
 /* ══════════════════════════════════════════════════════════════
    2. STATE GLOBAL
@@ -235,7 +235,51 @@ const S = {
 };
 
 /* ══════════════════════════════════════════════════════════════
-   3. LOADER – tampilkan / sembunyikan overlay loading
+   3. PREFERENSI LAYOUT — disimpan di localStorage per sheet
+   ──────────────────────────────────────────────────────────
+   Apa yang disimpan (per nama sheet):
+     • visibleCols  — kolom mana saja yang ditampilkan
+     • colWidths    — lebar tiap kolom (px)
+     • sidebarWidth — lebar sidebar kiri mode Dashboard
+
+   Kapan disimpan (otomatis):
+     • Saat user toggle checkbox kolom
+     • Saat drag resize kolom selesai (mouseup / touchend)
+     • Saat drag resize sidebar selesai (mouseup / touchend)
+
+   Key format:  "fishapp__{sheetName}__{setting}"
+   Contoh     : "fishapp__Master Data Ikan__colWidths"
+
+   Cara reset : Tombol sync ⟳ → hapus semua preferensi sheet aktif
+               dari localStorage, lalu kembalikan ke default.
+══════════════════════════════════════════════════════════════ */
+const PREFS = {
+    key   : (sheet, type) => `fishapp__${sheet}__${type}`,
+    save(sheet, type, value) {
+        try { localStorage.setItem(this.key(sheet, type), JSON.stringify(value)); } catch {}
+    },
+    load(sheet, type) {
+        try { const r = localStorage.getItem(this.key(sheet, type)); return r ? JSON.parse(r) : null; }
+        catch { return null; }
+    },
+    reset(sheet) {
+        ['visibleCols','colWidths','sidebarWidth'].forEach(t => {
+            try { localStorage.removeItem(this.key(sheet, t)); } catch {}
+        });
+    },
+    /* Terapkan preferensi tersimpan ke state S setelah header diketahui */
+    apply(sheet) {
+        const cols = this.load(sheet, 'visibleCols');
+        if (cols) S.visibleCols = cols;
+        const widths = this.load(sheet, 'colWidths');
+        if (widths && widths.length === S.headers.length) S.colWidths = widths;
+        const sw = this.load(sheet, 'sidebarWidth');
+        if (sw) S.sidebarWidth = sw;
+    }
+};
+
+/* ══════════════════════════════════════════════════════════════
+   4. LOADER – tampilkan / sembunyikan overlay loading
 ══════════════════════════════════════════════════════════════ */
 const $loader = document.getElementById('loader');
 const showLoader = msg => { $loader.innerText = msg || '⚡ LOADING...'; $loader.style.display = 'block'; };
@@ -330,6 +374,9 @@ async function loadData(sheet) {
         const savedCfg  = S.rawData[1]?.[22] ? String(S.rawData[1][22]) : '';
         S.visibleCols   = savedCfg ? savedCfg.split(',').map(Number) : S.headers.map((_, i) => i);
         S.colWidths     = S.headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200));
+
+        /* Terapkan preferensi tersimpan (kolom visible, lebar kolom, sidebar) */
+        PREFS.apply(sheet);
 
         buildFilterCheckboxes();
         rebuildFilter();
@@ -460,7 +507,12 @@ function initSidebarResize(e) {
     const rz = document.getElementById('sidebarResizer');
     rz?.classList.add('is-dragging');
     const move = m => { S.sidebarWidth = Math.max(50, w0 + m.pageX - x0); sl.style.width = S.sidebarWidth + 'px'; };
-    const up   = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); rz?.classList.remove('is-dragging'); };
+    const up   = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        rz?.classList.remove('is-dragging');
+        PREFS.save(S.currentSheet, 'sidebarWidth', S.sidebarWidth); // simpan ke localStorage
+    };
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup',   up);
 }
@@ -471,7 +523,12 @@ function initSidebarResizeTouch(e) {
     const rz = document.getElementById('sidebarResizer');
     rz?.classList.add('is-dragging');
     const move = t => { t.preventDefault(); S.sidebarWidth = Math.max(50, w0 + t.touches[0].pageX - x0); sl.style.width = S.sidebarWidth + 'px'; };
-    const end  = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', end); rz?.classList.remove('is-dragging'); };
+    const end  = () => {
+        document.removeEventListener('touchmove', move);
+        document.removeEventListener('touchend', end);
+        rz?.classList.remove('is-dragging');
+        PREFS.save(S.currentSheet, 'sidebarWidth', S.sidebarWidth); // simpan ke localStorage
+    };
     document.addEventListener('touchmove', move, {passive:false});
     document.addEventListener('touchend',  end);
 }
@@ -484,7 +541,11 @@ function initColResize(e, i, isDash = false) {
     const x0 = e.pageX, w0 = S.colWidths[i];
     const col = document.getElementById(isDash ? `detail-col-${i}` : `col-${i}`);
     const move = m => { S.colWidths[i] = Math.max(20, w0 + m.pageX - x0); if (col) col.style.width = S.colWidths[i] + 'px'; };
-    const up   = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+    const up   = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        PREFS.save(S.currentSheet, 'colWidths', S.colWidths); // simpan ke localStorage
+    };
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup',   up);
 }
@@ -493,7 +554,11 @@ function initColResizeTouch(e, i, isDash = false) {
     const x0 = e.touches[0].pageX, w0 = S.colWidths[i];
     const col = document.getElementById(isDash ? `detail-col-${i}` : `col-${i}`);
     const move = t => { t.preventDefault(); S.colWidths[i] = Math.max(20, w0 + t.touches[0].pageX - x0); if (col) col.style.width = S.colWidths[i] + 'px'; };
-    const end  = () => { document.removeEventListener('touchmove', move); document.removeEventListener('touchend', end); };
+    const end  = () => {
+        document.removeEventListener('touchmove', move);
+        document.removeEventListener('touchend', end);
+        PREFS.save(S.currentSheet, 'colWidths', S.colWidths); // simpan ke localStorage
+    };
     document.addEventListener('touchmove', move, {passive:false});
     document.addEventListener('touchend',  end);
 }
@@ -653,12 +718,19 @@ function buildFilterCheckboxes() {
             S.visibleCols = cb.checked
                 ? [...S.visibleCols, i]
                 : S.visibleCols.filter(x => x !== i);
+            PREFS.save(S.currentSheet, 'visibleCols', S.visibleCols); // simpan ke localStorage
             buildTable();
         };
         lbl.appendChild(cb); lbl.append(' ' + h); c.appendChild(lbl);
     });
 }
-function resetWidths() { S.visibleCols = S.headers.map((_, i) => i); buildTable(); }
+function resetWidths() {
+    PREFS.reset(S.currentSheet);                        // hapus preferensi dari localStorage
+    S.visibleCols  = S.headers.map((_, i) => i);        // tampilkan semua kolom
+    S.colWidths    = S.headers.map(h => Math.min(Math.max(String(h).length * 10, 80), 200)); // reset lebar
+    S.sidebarWidth = 220;                               // reset sidebar ke default
+    buildTable();
+}
 
 /* ══════════════════════════════════════════════════════════════
    15. AUTOFILL – isi kolom terkait otomatis saat input form
