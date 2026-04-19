@@ -75,7 +75,14 @@
         /* ── TABEL ─────────────────────────────────────────────── */
         .table-wrapper{overflow:auto;height:calc(100vh - 130px);width:100%;position:relative}
         table{border-collapse:collapse;table-layout:fixed;width:max-content}
-        th{background:#1a1a1a;color:var(--neon);padding:8px 4px;position:sticky;top:0;text-align:center;font-size:10px;z-index:10;border:1px solid #2a2a2a;overflow:hidden;white-space:nowrap}
+        /*
+         * HEADER TABEL — WRAP TEXT DINAMIS
+         * white-space:normal + word-break:break-word → teks header otomatis
+         * menumpuk/wrap saat kolom dipersempit lewat drag resize.
+         * min-width:0 diperlukan agar table-layout:fixed bisa menyempit bebas.
+         * vertical-align:middle → teks tetap di tengah meski multiline.
+         */
+        th{background:#1a1a1a;color:var(--neon);padding:8px 4px;position:sticky;top:0;text-align:center;font-size:10px;z-index:10;border:1px solid #2a2a2a;overflow:hidden;white-space:normal;word-break:break-word;vertical-align:middle;min-width:0;line-height:1.3}
         td{padding:6px 4px;border:1px solid #1a1a1a;font-size:10px;color:#ccc;vertical-align:middle;overflow:hidden;white-space:nowrap;text-overflow:clip}
 
         /*
@@ -203,7 +210,7 @@
    1. KONFIGURASI
    Ganti SCRIPT_URL jika Apps Script di-deploy ulang.
 ══════════════════════════════════════════════════════════════ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyu3CL2Iup3F8QIVwt08nDKHC0KIa1m_REBDG7RpfhPfkJwpr-cYPjrpdmsMk-4j1qn7w/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiYCi4WxnYLcQyBXUXWmgZATLR74McHmjdY0bcInB_qQ7uYuFBNoCVb9KoZWSc2FbtkA/exec';
 
 /* ══════════════════════════════════════════════════════════════
    2. STATE GLOBAL
@@ -738,9 +745,14 @@ function closeModal() { document.getElementById('dataModal').style.display = 'no
 ══════════════════════════════════════════════════════════════ */
 function uploadFile(input, idx) {
     const file = input.files[0]; if (!file) return;
-    const nameEl = document.getElementById('field-text-19');
-    const base   = (nameEl?.value.trim()) || file.name.split('.')[0];
-    const fname  = `${base}.${file.name.split('.').pop()}`;
+
+    /* ── Nama file = Local Name (kolom I, index 8) + Size (kolom J, index 9)
+       Contoh: "Angel Asli" + "S"  →  "Angel Asli S.jpg"
+       Fallback ke nama file asli jika kedua kolom kosong.                   */
+    const localName = (document.getElementById('field-text-8')?.value || '').trim();
+    const size      = (document.getElementById('field-text-9')?.value || '').trim();
+    const base      = [localName, size].filter(Boolean).join(' ') || file.name.split('.')[0];
+    const fname     = `${base}.${file.name.split('.').pop()}`;
     const reader = new FileReader();
     reader.onload = e => {
         showLoader('⚡ UPLOADING...');
